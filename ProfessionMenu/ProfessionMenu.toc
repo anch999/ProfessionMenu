@@ -1,0 +1,12 @@
+## Interface: 30300
+## Title: ProfessionMenu
+## Notes: Profession Menu For Ascension
+## Author: Anch
+## SavedVariables: ProfessionMenu
+## SavedVariablesPerCharacter: ProfessionMenuDB
+## X-Category: Profession
+## X-OptionsFrame: ProfessionMenuOptionsFrame
+## DefaultState: enabled
+## Version: 0.1
+
+embeds.xml
