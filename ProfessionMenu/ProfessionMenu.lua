@@ -194,8 +194,7 @@ function PM:AddItem(itemID)
                 'text', text,
                 'icon', icon,
                 'secure', secure,
-                'fun', function() if not PM:HasItem(itemID) then RequestDeliverVanityCollectionItem(itemID) else if PM.db.deleteAltar then PM:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED") end dewdrop:Close() end end,
-                'closeWhenClicked', true,
+                'func', function() if not PM:HasItem(itemID) then RequestDeliverVanityCollectionItem(itemID) else if PM.db.DeleteItem then PM:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED") end dewdrop:Close() end end,
                 'textHeight', 12,
                 'textWidth', 12
         )
