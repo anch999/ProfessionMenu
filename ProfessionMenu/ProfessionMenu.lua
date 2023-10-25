@@ -461,6 +461,7 @@ function PM:OnEnable()
     SlashCmdList["PROFESSIONMENU"] = function(msg)
         SlashCommand(msg)
     end
+    PM:RegisterEvent("ADDON_LOADED")
 end
 
 local function GetTipAnchor(frame)
@@ -502,4 +503,109 @@ function PM:ToggleMinimap()
     else
       icon:Show('ProfessionMenu')
     end
+end
+
+function PM:UpdateButtonText(i)
+    local scrollFrame = HelpMenuFrameRightInsetItemRestorePanel.RecoveryScroll.ScrollFrame
+    local text = scrollFrame.buttons[i].SubText:GetText()
+    if scrollFrame.buttons[i].item then
+        local spellID = PM:GetRecipeData(scrollFrame.buttons[i].item.ItemEntry, "item")
+        if spellID then
+            if CA_IsSpellKnown(spellID) then
+                scrollFrame.buttons[i].SubText:SetText(text.."  |cff1eff00(Known)")
+            else
+                scrollFrame.buttons[i].SubText:SetText(text.."  |cffff0000(Unknown)")
+            end
+        end
+    end
+end
+
+function PM:InitializeTextUpdate()
+    for i = 1, 11 do
+        local updateItemButton = HelpMenuFrameRightInsetItemRestorePanel.RecoveryScroll.ScrollFrame.buttons[i]
+        local updateItemButtonOld = updateItemButton.Update
+            updateItemButton.Update = function(...)
+                updateItemButtonOld(...)
+                PM:UpdateButtonText(i)
+            end
+    end
+end
+
+function PM:GetRecipeData(recipeID, idType)
+	for _,prof in pairs(TRADESKILL_RECIPES) do
+		for _,cat in pairs(prof) do
+		   for _,recipe in pairs(cat) do
+			  if (idType == "spell" and recipeID == recipe.SpellEntry) or (idType == "item" and recipeID == recipe.RecipeItemEntry) then
+				return recipe.SpellEntry
+			  end
+		   end
+		end
+	 end
+end
+
+function PM:ADDON_LOADED(event, arg1, arg2, arg3)
+	-- setup for auction house window
+	if event == "ADDON_LOADED" and arg1 == "Ascension_HelpUI" then
+        PM:LoadTradeskillRecipes()
+		PM:InitializeTextUpdate()
+	end
+end
+
+function PM:LoadTradeskillRecipes()
+	if TRADESKILL_RECIPES then return end
+		TRADESKILL_RECIPES = {}
+		TRADESKILL_CRAFTS = {}
+
+		local fmtSubClass = "ITEM_SUBCLASS_%d_%d"
+		local fmtTotem = "SPELL_TOTEM_%d"
+		local fmtObject = "SPELL_FOCUS_OBJECT_%d"
+
+		local content = C_ContentLoader:Load("TradeSkillRecipeData")
+
+		local function GetToolName(toolID)
+			return _G[format(fmtTotem, toolID)]
+		end
+
+		content:SetParser(function(_, data)
+			if not TRADESKILL_RECIPES[data.SkillIndex] then
+				TRADESKILL_RECIPES[data.SkillIndex] = {}
+			end
+
+			data.Category = _G[format(fmtSubClass, data.CreatedItemClass, data.CreatedItemSubClass)]
+
+			if not TRADESKILL_RECIPES[data.SkillIndex][data.Category] then
+				TRADESKILL_RECIPES[data.SkillIndex][data.Category] = {}
+			end
+
+			data.IsHighRisk = toboolean(data.IsHighRisk)
+
+			-- reformat reagents
+			data.Reagents = {}
+			local reagents = data.ReagentData:SplitToTable(",")
+			for _, reagentString in ipairs(reagents) do
+				local item, count = reagentString:match("(%d*):(%d*)")
+				item = tonumber(item)
+				count = tonumber(count)
+				if item and item ~= 0 and count and count ~= 0 then
+					tinsert(data.Reagents, {item, count})
+				end
+			end
+
+			if #data.Reagents > 0 then
+				data.ReagentData = nil
+
+				-- reformat tools (totems)
+				data.Tools = data.TotemCategories:SplitToTable(",", GetToolName)
+				data.TotemCategories = nil
+
+				data.SpellFocusObject = _G[format(fmtObject, data.SpellFocusObject)]
+
+				tinsert(TRADESKILL_RECIPES[data.SkillIndex][data.Category], data)
+				if data.CreatedItemEntry > 0 then
+					TRADESKILL_CRAFTS[data.CreatedItemEntry] = data
+				end
+			end
+		end)
+
+		content:Parse()
 end
