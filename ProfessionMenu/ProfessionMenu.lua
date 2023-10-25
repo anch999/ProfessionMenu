@@ -7,7 +7,7 @@ local defIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
 local icon = LibStub('LibDBIcon-1.0')
 local CYAN =  "|cff00ffff"
 local WHITE = "|cffFFFFFF"
-local 
+
 PROFESSIONMENU_MINIMAP = LibStub:GetLibrary('LibDataBroker-1.1'):NewDataObject(addonName, {
     type = 'data source',
     text = "ProfessionMenu",
@@ -22,6 +22,7 @@ local DefaultSettings  = {
     { TableName = "HideMenu", false, Frame = "ProfessionMenuFrame", CheckBox = "ProfessionMenuOptions_HideMenu"},
     { TableName = "DeleteItem", false, CheckBox = "ProfessionMenuOptions_DeleteMenu"},
     { TableName = "minimap", false, CheckBox = "ProfessionMenuOptions_HideMinimap"},
+    { TableName = "txtSize", 12 }
 }
 
 --[[ TableName = Name of the saved setting
@@ -195,8 +196,8 @@ function PM:AddItem(itemID)
                 'icon', icon,
                 'secure', secure,
                 'func', function() if not PM:HasItem(itemID) then RequestDeliverVanityCollectionItem(itemID) else if PM.db.DeleteItem then PM:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED") end dewdrop:Close() end end,
-                'textHeight', 12,
-                'textWidth', 12
+                'textHeight', PM.db.txtSize,
+                'textWidth', PM.db.txtSize
         )
 end
 
@@ -205,8 +206,8 @@ function PM:AddDividerLine(maxLenght)
     local text = WHITE.."----------------------------------------------------------------------------------------------------"
     dewdrop:AddLine(
         'text' , text:sub(1, maxLenght),
-        'textHeight', 12,
-        'textWidth', 12,
+        'textHeight', PM.db.txtSize,
+        'textWidth', PM.db.txtSize,
         'isTitle', true,
         "notCheckable", true
     )
@@ -221,8 +222,8 @@ local function ProfessionMenu_DewdropRegister(self, frame)
         'children', function(level, value)
             dewdrop:AddLine(
                 'text', "|cffffff00Professions",
-                'textHeight', 12,
-                'textWidth', 12,
+                'textHeight', PM.db.txtSize,
+                'textWidth', PM.db.txtSize,
                 'isTitle', true,
                 'notCheckable', true
             )
@@ -239,8 +240,8 @@ local function ProfessionMenu_DewdropRegister(self, frame)
                                 'icon', icon,
                                 'secure', secure,
                                 'closeWhenClicked', true,
-                                'textHeight', 12,
-                                'textWidth', 12
+                                'textHeight', PM.db.txtSize,
+                                'textWidth', PM.db.txtSize
                         )
                     end
                 end
@@ -252,26 +253,29 @@ local function ProfessionMenu_DewdropRegister(self, frame)
                 end
                 if CA_IsSpellKnown(750750) then
                     local name, _, icon = GetSpellInfo(750750)
-                    local secure = {
-                        type1 = 'spell',
-                        spell = name
-                        }
-                    dewdrop:AddLine(
-                            'text', name,
-                            'icon', icon,
-                            'secure', secure,
-                            'closeWhenClicked', true,
-                            'textHeight', 12,
-                            'textWidth', 12
-                    )
+                    local secure = { type1 = 'spell', spell = name }
+                    dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
                 end
+            end
+            if CA_IsSpellKnown(13262) or CA_IsSpellKnown(31252) then
+                PM:AddDividerLine(35)
+            end
+            if CA_IsSpellKnown(13262) then
+                local name, _, icon = GetSpellInfo(13262)
+                local secure = { type1 = 'spell', spell = name }
+                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
+            end
+            if CA_IsSpellKnown(31252) then
+                local name, _, icon = GetSpellInfo(31252)
+                local secure = { type1 = 'spell', spell = name }
+                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
             end
             PM:AddDividerLine(35)
             if frame == "ProfessionMenuFrame_Menu" then
                 dewdrop:AddLine(
                     'text', "Unlock Frame",
-                    'textHeight', 12,
-                    'textWidth', 12,
+                    'textHeight', PM.db.txtSize,
+                    'textWidth', PM.db.txtSize,
                     'func', PM.UnlockFrame,
                     'notCheckable', true,
                     'closeWhenClicked', true
@@ -279,8 +283,8 @@ local function ProfessionMenu_DewdropRegister(self, frame)
             end
             dewdrop:AddLine(
 				'text', "Options",
-                'textHeight', 12,
-                'textWidth', 12,
+                'textHeight', PM.db.txtSize,
+                'textWidth', PM.db.txtSize,
 				'func', PM.Options_Toggle,
 				'notCheckable', true,
                 'closeWhenClicked', true
@@ -290,8 +294,8 @@ local function ProfessionMenu_DewdropRegister(self, frame)
                 'textR', 0,
                 'textG', 1,
                 'textB', 1,
-                'textHeight', 12,
-                'textWidth', 12,
+                'textHeight', PM.db.txtSize,
+                'textWidth', PM.db.txtSize,
 				'closeWhenClicked', true,
 				'notCheckable', true
 			)
@@ -469,11 +473,9 @@ end
 
 function minimap.OnClick(self, button)
     GameTooltip:Hide()
-    if button == "LeftButton" then
-        if dewdrop:IsOpen() then dewdrop:Close() return end
-        ProfessionMenu_DewdropRegister(self)
-        dewdrop:Open(self)
-    end
+    if dewdrop:IsOpen() then dewdrop:Close() return end
+    ProfessionMenu_DewdropRegister(self)
+    dewdrop:Open(self)
 end
 
 function minimap.OnLeave()
