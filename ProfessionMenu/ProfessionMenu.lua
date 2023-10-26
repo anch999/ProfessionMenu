@@ -293,7 +293,7 @@ local function ProfessionMenu_DewdropRegister(self)
             if CA_IsSpellKnown(750750) then
                 if not divider then divider = PM:AddDividerLine(35) end
                 local name, _, icon = GetSpellInfo(750750)
-                local secure = { type1 = 'spell', spell = 750750 }
+                local secure = { type1 = 'spell', spell = name }
                 dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
             end
 
