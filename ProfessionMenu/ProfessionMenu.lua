@@ -136,8 +136,14 @@ local profList = {
         3274, -- Journeyman 150
         3273, -- Apprentice 75
     }, --FIRSTAID
+    {13977860}, --WOODCUTTING
 }
 
+local profSubList = {
+    13262,
+    31252,
+    818,
+}
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
 	PM:RemoveItem(arg2)
 end
@@ -162,6 +168,8 @@ end
 
 local items = {
     1777028, -- thermal anvil
+    1904514, -- sanguine workbench vanity
+    1904515,
 }
 -- deletes any mystic altars in the players inventory
 function PM:RemoveItem(arg2)
@@ -176,10 +184,29 @@ function PM:RemoveItem(arg2)
 	PM:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end
 
+local function returnItemIDs()
+    local list = {}
+    for _, itemID in ipairs(items) do
+        if PM:HasItem(itemID) or C_VanityCollection.IsCollectionItemOwned(itemID) then
+            tinsert(list, itemID)
+        end
+    end
+    return list
+end
+
+-- returns a list of known spellIDs
+local function returnSpellIDs()
+    local list = {}
+    for _, spellID in ipairs(profSubList) do
+        if CA_IsSpellKnown(spellID) then
+            tinsert(list, spellID)
+        end
+    end
+    return list
+end
 
 -- add altar summon button via dewdrop secure
-function PM:AddItem(itemID)
-	if not C_VanityCollection.IsCollectionItemOwned(itemID) then return end
+local function addItem(itemID)
         local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemID)
         local startTime, duration = GetItemCooldown(itemID)
 		local cooldown = math.ceil(((duration - (GetTime() - startTime))/60))
@@ -211,6 +238,7 @@ function PM:AddDividerLine(maxLenght)
         'isTitle', true,
         "notCheckable", true
     )
+    return true
 end
 
 --sets up the drop down menu for specs
@@ -241,34 +269,38 @@ local function ProfessionMenu_DewdropRegister(self, frame)
                                 'secure', secure,
                                 'closeWhenClicked', true,
                                 'textHeight', PM.db.txtSize,
-                                'textWidth', PM.db.txtSize
+                                'textWidth', PM.db.txtSize,
+                                'func', function() print(spellID) end 
                         )
                     end
                 end
             end
-            if CA_IsSpellKnown(750750) or C_VanityCollection.IsCollectionItemOwned(1777028) then
-                PM:AddDividerLine(35)
-                if C_VanityCollection.IsCollectionItemOwned(1777028) then
-                    PM:AddItem(1777028)
+            local divider
+
+            local SummonItems = returnItemIDs()
+
+            if #SummonItems > 0 then
+                if not divider then divider = PM:AddDividerLine(35) end
+                for _, itemID in ipairs(SummonItems) do
+                    addItem(itemID)
                 end
-                if CA_IsSpellKnown(750750) then
-                    local name, _, icon = GetSpellInfo(750750)
+            end
+
+            if CA_IsSpellKnown(750750) then
+                if not divider then divider = PM:AddDividerLine(35) end
+                local name, _, icon = GetSpellInfo(750750)
+                local secure = { type1 = 'spell', spell = name }
+                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
+            end
+
+            local spellIDs = returnSpellIDs()
+            if #spellIDs > 0 then
+                PM:AddDividerLine(35)
+                for _, spellID in ipairs(spellIDs) do
+                    local name, _, icon = GetSpellInfo(spellID)
                     local secure = { type1 = 'spell', spell = name }
-                    dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
+                    dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)    
                 end
-            end
-            if CA_IsSpellKnown(13262) or CA_IsSpellKnown(31252) then
-                PM:AddDividerLine(35)
-            end
-            if CA_IsSpellKnown(13262) then
-                local name, _, icon = GetSpellInfo(13262)
-                local secure = { type1 = 'spell', spell = name }
-                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
-            end
-            if CA_IsSpellKnown(31252) then
-                local name, _, icon = GetSpellInfo(31252)
-                local secure = { type1 = 'spell', spell = name }
-                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
             end
             PM:AddDividerLine(35)
             if frame == "ProfessionMenuFrame_Menu" then
