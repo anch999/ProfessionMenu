@@ -269,8 +269,7 @@ local function ProfessionMenu_DewdropRegister(self, frame)
                                 'secure', secure,
                                 'closeWhenClicked', true,
                                 'textHeight', PM.db.txtSize,
-                                'textWidth', PM.db.txtSize,
-                                'func', function() print(spellID) end 
+                                'textWidth', PM.db.txtSize
                         )
                     end
                 end

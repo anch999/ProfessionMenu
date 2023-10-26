@@ -7,6 +7,6 @@
 ## X-Category: Profession
 ## X-OptionsFrame: ProfessionMenuOptionsFrame
 ## DefaultState: enabled
-## Version: 0.5
+## Version: 0.6
 
 embeds.xml
