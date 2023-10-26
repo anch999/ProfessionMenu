@@ -22,7 +22,8 @@ local DefaultSettings  = {
     { TableName = "HideMenu", false, Frame = "ProfessionMenuFrame", CheckBox = "ProfessionMenuOptions_HideMenu"},
     { TableName = "DeleteItem", false, CheckBox = "ProfessionMenuOptions_DeleteMenu"},
     { TableName = "minimap", false, CheckBox = "ProfessionMenuOptions_HideMinimap"},
-    { TableName = "txtSize", 12 }
+    { TableName = "txtSize", 12},
+    { TableName = "autoMenu", false, CheckBox = "ProfessionMenuOptions_AutoMenu"}
 }
 
 --[[ TableName = Name of the saved setting
@@ -167,28 +168,31 @@ function PM:HasItem(itemID)
 end
 
 local items = {
-    1777028, -- thermal anvil
-    1904514, -- sanguine workbench vanity
-    1904515,
+    {1777028, "Summon Thermal Anvil"}, -- thermal anvil
+    {1904514, "Summon Sanguine Workbench"}, -- sanguine workbench vanity
+    {1904515},
 }
--- deletes any mystic altars in the players inventory
+
+-- deletes item from players inventory if value 2 in the items table is set
 function PM:RemoveItem(arg2)
-	if arg2 ~= "Summon Thermal Anvil" or not PM.db.DeleteItem then return end
-	for _, itemID in pairs(items) do
-		local found, bag, slot = PM:HasItem(itemID)
-		if found then
-			PickupContainerItem(bag, slot)
-			DeleteCursorItem()
-		end
+	if not PM.db.DeleteItem then return end
+	for _, item in ipairs(items) do
+        if arg2 == item[2] then
+            local found, bag, slot = PM:HasItem(item[1])
+            if found then
+                PickupContainerItem(bag, slot)
+                DeleteCursorItem()
+            end
+        end
 	end
 	PM:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end
 
 local function returnItemIDs()
     local list = {}
-    for _, itemID in ipairs(items) do
-        if PM:HasItem(itemID) or C_VanityCollection.IsCollectionItemOwned(itemID) then
-            tinsert(list, itemID)
+    for _, item in ipairs(items) do
+        if PM:HasItem(item[1]) or C_VanityCollection.IsCollectionItemOwned(item[1]) then
+            tinsert(list, item[1])
         end
     end
     return list
@@ -242,7 +246,8 @@ function PM:AddDividerLine(maxLenght)
 end
 
 --sets up the drop down menu for specs
-local function ProfessionMenu_DewdropRegister(self, frame)
+local function ProfessionMenu_DewdropRegister(self)
+    if dewdrop:IsOpen(self) then dewdrop:Close() return end
     dewdrop:Register(self,
         'point', function(parent)
             return "TOP", "BOTTOM"
@@ -261,7 +266,7 @@ local function ProfessionMenu_DewdropRegister(self, frame)
                         local name, _, icon = GetSpellInfo(spellID)
                         local secure = {
                             type1 = 'spell',
-                            spell = name
+                            spell = spellID
                             }
                         dewdrop:AddLine(
                                 'text', name,
@@ -288,7 +293,7 @@ local function ProfessionMenu_DewdropRegister(self, frame)
             if CA_IsSpellKnown(750750) then
                 if not divider then divider = PM:AddDividerLine(35) end
                 local name, _, icon = GetSpellInfo(750750)
-                local secure = { type1 = 'spell', spell = name }
+                local secure = { type1 = 'spell', spell = 750750 }
                 dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
             end
 
@@ -297,12 +302,12 @@ local function ProfessionMenu_DewdropRegister(self, frame)
                 PM:AddDividerLine(35)
                 for _, spellID in ipairs(spellIDs) do
                     local name, _, icon = GetSpellInfo(spellID)
-                    local secure = { type1 = 'spell', spell = name }
+                    local secure = { type1 = 'spell', spell = spellID }
                     dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)    
                 end
             end
             PM:AddDividerLine(35)
-            if frame == "ProfessionMenuFrame_Menu" then
+            if self.show then
                 dewdrop:AddLine(
                     'text', "Unlock Frame",
                     'textHeight', PM.db.txtSize,
@@ -333,13 +338,8 @@ local function ProfessionMenu_DewdropRegister(self, frame)
 		end,
 		'dontHook', true
 	)
-end
-
-local function mainButton_OnClick(self, arg1)
-    if dewdrop:IsOpen() then PM:OnEnter(self) dewdrop:Close() return end
-    GameTooltip:Hide()
-    ProfessionMenu_DewdropRegister(self, "ProfessionMenuFrame_Menu")
     dewdrop:Open(self)
+    GameTooltip:Hide()
 end
 
 local function toggleMainButton(toggle)
@@ -418,8 +418,12 @@ end
     professionbutton:SetPoint("BOTTOM", ProfessionMenuFrame, "BOTTOM", 0, 2)
     professionbutton:RegisterForClicks("LeftButtonDown", "RightButtonDown")
     professionbutton:Show()
-    professionbutton:SetScript("OnClick", function(self, btnclick) mainButton_OnClick(self, btnclick) end)
+    professionbutton:SetScript("OnClick", function(self, btnclick) if not PM.db.autoMenu then ProfessionMenu_DewdropRegister(self) end end)
+    professionbutton.show = true
     professionbutton:SetScript("OnEnter", function(self)
+        if PM.db.autoMenu then
+            ProfessionMenu_DewdropRegister(self)
+        end
         if not dewdrop:IsOpen() then
         PM:OnEnter(self)
         end
@@ -505,9 +509,9 @@ end
 
 function minimap.OnClick(self, button)
     GameTooltip:Hide()
-    if dewdrop:IsOpen() then dewdrop:Close() return end
-    ProfessionMenu_DewdropRegister(self)
-    dewdrop:Open(self)
+    if not PM.db.autoMenu then
+        ProfessionMenu_DewdropRegister(self)
+    end
 end
 
 function minimap.OnLeave()
@@ -515,11 +519,15 @@ function minimap.OnLeave()
 end
 
 function PM:OnEnter(self)
-    GameTooltip:SetOwner(self, 'ANCHOR_NONE')
-    GameTooltip:SetPoint(GetTipAnchor(self))
-    GameTooltip:ClearLines()
-    GameTooltip:AddLine("ProfessionMenu")
-    GameTooltip:Show()
+    if PM.db.autoMenu then
+        ProfessionMenu_DewdropRegister(self)
+    else
+        GameTooltip:SetOwner(self, 'ANCHOR_NONE')
+        GameTooltip:SetPoint(GetTipAnchor(self))
+        GameTooltip:ClearLines()
+        GameTooltip:AddLine("ProfessionMenu")
+        GameTooltip:Show()
+    end
 end
 
 function minimap.OnEnter(self)
