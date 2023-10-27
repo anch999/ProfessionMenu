@@ -245,6 +245,8 @@ function PM:AddDividerLine(maxLenght)
     return true
 end
 
+
+
 --sets up the drop down menu for specs
 local function ProfessionMenu_DewdropRegister(self)
     if dewdrop:IsOpen(self) then dewdrop:Close() return end
@@ -339,6 +341,16 @@ local function ProfessionMenu_DewdropRegister(self)
 		'dontHook', true
 	)
     dewdrop:Open(self)
+    local hook
+    if not hook then
+        WorldFrame:HookScript("OnEnter", function()
+            if dewdrop:IsOpen(self) then
+                dewdrop:Close()
+            end
+        end)
+        hook = true
+    end
+
     GameTooltip:Hide()
 end
 
@@ -438,7 +450,7 @@ end
 
 InterfaceOptionsFrame:HookScript("OnShow", function()
     if InterfaceOptionsFrame and ProfessionMenuOptionsFrame:IsVisible() then
-			PM:OpenOptions()
+		PM:OpenOptions()
     end
 end)
 
