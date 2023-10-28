@@ -149,6 +149,21 @@ function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
 	PM:RemoveItem(arg2)
 end
 
+local cTip = CreateFrame("GameTooltip","cTooltip",nil,"GameTooltipTemplate")
+
+local function IsSoulbound(bag, slot)
+    cTip:SetOwner(UIParent, "ANCHOR_NONE")
+    cTip:SetBagItem(bag, slot)
+    cTip:Show()
+    for i = 1,cTip:NumLines() do
+        if(_G["cTooltipTextLeft"..i]:GetText()==ITEM_SOULBOUND) then
+            return true
+        end
+    end
+    cTip:Hide()
+    return false
+end
+
 -- returns true, if player has item with given ID in inventory or bags and it's not on cooldown
 function PM:HasItem(itemID)
 	local item, found, id
@@ -179,7 +194,7 @@ function PM:RemoveItem(arg2)
 	for _, item in ipairs(items) do
         if arg2 == item[2] then
             local found, bag, slot = PM:HasItem(item[1])
-            if found then
+            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and IsSoulbound(bag, slot) then
                 PickupContainerItem(bag, slot)
                 DeleteCursorItem()
             end
