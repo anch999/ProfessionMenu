@@ -17,5 +17,7 @@
 <Script file="Libs\DewdropLib\Dewdrop-2.0\Dewdrop-2.0.lua"/>
 
 <Script file="ProfessionMenu.lua"/>
+<Script file="ProfessionMenuInventory.lua"/>
 <Script file="ProfessionMenuOptions.lua"/>
+
 </Ui>

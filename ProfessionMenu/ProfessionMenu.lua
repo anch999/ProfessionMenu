@@ -23,7 +23,10 @@ local DefaultSettings  = {
     { TableName = "DeleteItem", false, CheckBox = "ProfessionMenuOptions_DeleteMenu"},
     { TableName = "minimap", false, CheckBox = "ProfessionMenuOptions_HideMinimap"},
     { TableName = "txtSize", 12},
-    { TableName = "autoMenu", false, CheckBox = "ProfessionMenuOptions_AutoMenu"}
+    { TableName = "autoMenu", false, CheckBox = "ProfessionMenuOptions_AutoMenu"},
+    { TableName = "FilterList", {false,false,false,false} },
+    { TableName = "BagFilter", {false,false,false,false,false} },
+    { TableName = "ItemBlacklist", { [9149] = true }}
 }
 
 --[[ TableName = Name of the saved setting
@@ -79,6 +82,7 @@ local profList = {
         7413, -- Expert 225
         7412, -- Journeyman 150
         7411, -- Apprentice 75
+        frame = {"ProfessionMenuExtractFrame", "Enchanting", "Right click to open disenchanting frame"}
     }, --ENCHANTING
     {
         51306, -- Grand Master 450
@@ -147,11 +151,12 @@ local profSubList = {
 }
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
 	PM:RemoveItem(arg2)
+    PM:UpdateItemFrame(arg2)
 end
 
 local cTip = CreateFrame("GameTooltip","cTooltip",nil,"GameTooltipTemplate")
 
-local function IsSoulbound(bag, slot)
+function PM:IsSoulbound(bag, slot)
     cTip:SetOwner(UIParent, "ANCHOR_NONE")
     cTip:SetBagItem(bag, slot)
     cTip:Show()
@@ -194,7 +199,7 @@ function PM:RemoveItem(arg2)
 	for _, item in ipairs(items) do
         if arg2 == item[2] then
             local found, bag, slot = PM:HasItem(item[1])
-            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and IsSoulbound(bag, slot) then
+            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and PM:IsSoulbound(bag, slot) then
                 PickupContainerItem(bag, slot)
                 DeleteCursorItem()
             end
@@ -285,13 +290,22 @@ local function ProfessionMenu_DewdropRegister(self)
                             type1 = 'spell',
                             spell = spellID
                             }
+                        local openFrame, tooltipTitle, tooltipText
+                        if prof.frame then
+                            openFrame = true
+                            tooltipTitle = prof.frame[2]
+                            tooltipText = prof.frame[3]
+                        end
                         dewdrop:AddLine(
                                 'text', name,
                                 'icon', icon,
                                 'secure', secure,
                                 'closeWhenClicked', true,
+                                'funcRight', function() PM:InventoryFrame_Open(openFrame) end,
                                 'textHeight', PM.db.txtSize,
-                                'textWidth', PM.db.txtSize
+                                'textWidth', PM.db.txtSize,
+                                'tooltipTitle', tooltipTitle,
+                                'tooltipText', tooltipText
                         )
                     end
                 end
