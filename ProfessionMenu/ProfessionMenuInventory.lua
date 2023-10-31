@@ -45,21 +45,17 @@ local InventoryTypes = {
 function PM:InventoryFrame_Open(isEnabled)
     if not isEnabled then return end
     if mainframe:IsVisible() then
+        PM:UnregisterEvent("BAG_UPDATE")
         mainframe:Hide()
     else
         mainframe:Show()
+        PM:RegisterEvent("BAG_UPDATE")
     end
-end
-
-function PM:UpdateItemFrame(arg2)
-    if arg2 ~= "Disenchant" then return end
-    PM:RegisterEvent("BAG_UPDATE")
-    PM:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end
 
 function PM:BAG_UPDATE()
     PM:ScheduleTimer(function() PM:SearchBags() end, .10)
-    PM:UnregisterEvent("BAG_UPDATE")
+    
 end
 
 local function filterCheck(quality, bagID, slotID)

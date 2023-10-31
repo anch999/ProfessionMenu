@@ -151,7 +151,6 @@ local profSubList = {
 }
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
 	PM:RemoveItem(arg2)
-    PM:UpdateItemFrame(arg2)
 end
 
 local cTip = CreateFrame("GameTooltip","cTooltip",nil,"GameTooltipTemplate")
