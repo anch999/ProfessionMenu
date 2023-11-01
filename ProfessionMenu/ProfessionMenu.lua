@@ -26,7 +26,9 @@ local DefaultSettings  = {
     { TableName = "autoMenu", false, CheckBox = "ProfessionMenuOptions_AutoMenu"},
     { TableName = "FilterList", {false,false,false,false} },
     { TableName = "BagFilter", {false,false,false,false,false} },
-    { TableName = "ItemBlacklist", { [9149] = true }}
+    { TableName = "ItemBlacklist", { [9149] = true }},
+    { TableName = "hideMaxRank", false, CheckBox = "ProfessionMenuOptions_HideMaxRank"},
+    { TableName = "hideRank", false, CheckBox = "ProfessionMenuOptions_HideRank"}
 }
 
 --[[ TableName = Name of the saved setting
@@ -264,7 +266,55 @@ function PM:AddDividerLine(maxLenght)
     return true
 end
 
+function PM:GetProfessions()
+    local function getProfessionRanks(compName)
+        for skillIndex = 1, GetNumSkillLines() do
+            local name, _, _, rank, _, _, maxRank, _, _, _, _, _, _ = GetSkillLineInfo(skillIndex)
+            if compName:match(name) then
+                return rank, maxRank
+            end
+        end
+    end
 
+     for _, prof in ipairs(profList) do
+        for _, spellID in ipairs(prof) do
+            if CA_IsSpellKnown(spellID) then
+                local name, _, icon = GetSpellInfo(spellID)
+                local rank, maxRank = getProfessionRanks(name)
+                if not PM.db.hideRank and PM.db.hideMaxRank then
+                    name = name .. " |cFF00FFFF("..rank..")"
+                end
+                if not PM.db.hideMaxRank and PM.db.hideRank then
+                    name = name .. " |cFF00FFFF("..maxRank..")"
+                end
+                if not PM.db.hideMaxRank and not PM.db.hideRank then
+                    name = name .. " |cFF00FFFF("..rank.."/"..maxRank..")"
+                end
+                local secure = {
+                    type1 = 'spell',
+                    spell = spellID
+                    }
+                local openFrame, tooltipTitle, tooltipText
+                if prof.frame then
+                    openFrame = true
+                    tooltipTitle = prof.frame[2]
+                    tooltipText = prof.frame[3]
+                end
+                dewdrop:AddLine(
+                        'text', name,
+                        'icon', icon,
+                        'secure', secure,
+                        'closeWhenClicked', true,
+                        'funcRight', function() PM:InventoryFrame_Open(openFrame) end,
+                        'textHeight', PM.db.txtSize,
+                        'textWidth', PM.db.txtSize,
+                        'tooltipTitle', tooltipTitle,
+                        'tooltipText', tooltipText
+                )
+            end
+        end
+    end
+end
 
 --sets up the drop down menu for specs
 local function ProfessionMenu_DewdropRegister(self)
@@ -281,34 +331,7 @@ local function ProfessionMenu_DewdropRegister(self)
                 'isTitle', true,
                 'notCheckable', true
             )
-            for _, prof in ipairs(profList) do
-                for _, spellID in ipairs(prof) do
-                    if CA_IsSpellKnown(spellID) then
-                        local name, _, icon = GetSpellInfo(spellID)
-                        local secure = {
-                            type1 = 'spell',
-                            spell = spellID
-                            }
-                        local openFrame, tooltipTitle, tooltipText
-                        if prof.frame then
-                            openFrame = true
-                            tooltipTitle = prof.frame[2]
-                            tooltipText = prof.frame[3]
-                        end
-                        dewdrop:AddLine(
-                                'text', name,
-                                'icon', icon,
-                                'secure', secure,
-                                'closeWhenClicked', true,
-                                'funcRight', function() PM:InventoryFrame_Open(openFrame) end,
-                                'textHeight', PM.db.txtSize,
-                                'textWidth', PM.db.txtSize,
-                                'tooltipTitle', tooltipTitle,
-                                'tooltipText', tooltipText
-                        )
-                    end
-                end
-            end
+            PM:GetProfessions()
             local divider
 
             local SummonItems = returnItemIDs()
@@ -537,6 +560,9 @@ function PM:OnEnable()
         SlashCommand(msg)
     end
     PM:RegisterEvent("ADDON_LOADED")
+    
+    --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
+	tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
 end
 
 local function GetTipAnchor(frame)
