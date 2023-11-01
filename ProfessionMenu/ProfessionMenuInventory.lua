@@ -10,7 +10,7 @@ local mainframe = CreateFrame("FRAME", "ProfessionMenuExtractFrame", UIParent,"U
     mainframe:SetScript("OnDragStop", function(self) mainframe:StopMovingOrSizing() end)
     mainframe:SetScript("OnShow", function()
         PM:SearchBags()
-        PM:RegisterEvent("BAG_UPDATE", PM.SearchBags)
+        PM:RegisterEvent("BAG_UPDATE")
     end)
     mainframe:SetScript("OnHide", function()
         PM:UnregisterEvent("BAG_UPDATE")
@@ -45,11 +45,9 @@ local InventoryTypes = {
 function PM:InventoryFrame_Open(isEnabled)
     if not isEnabled then return end
     if mainframe:IsVisible() then
-        PM:UnregisterEvent("BAG_UPDATE")
         mainframe:Hide()
     else
         mainframe:Show()
-        PM:RegisterEvent("BAG_UPDATE")
     end
 end
 
