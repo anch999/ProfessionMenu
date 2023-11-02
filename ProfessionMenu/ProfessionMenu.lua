@@ -118,7 +118,10 @@ local profList = {
         3104, -- Journeyman 150
         2108, -- Apprentice 75
     }, --LEATHERWORKING
-    {2656}, --SMELTING
+    { 
+    2656,
+    main = 50310 -- mining spellid for rank info
+    }, --SMELTING
     {
         51309, -- Grand Master 450
         26790, -- Master 375
@@ -266,7 +269,7 @@ function PM:AddDividerLine(maxLenght)
     return true
 end
 
-function PM:GetProfessions()
+function PM:AddProfessions()
     local function getProfessionRanks(compName)
         for skillIndex = 1, GetNumSkillLines() do
             local name, _, _, rank, _, _, maxRank, _, _, _, _, _, _ = GetSkillLineInfo(skillIndex)
@@ -280,7 +283,11 @@ function PM:GetProfessions()
         for _, spellID in ipairs(prof) do
             if CA_IsSpellKnown(spellID) then
                 local name, _, icon = GetSpellInfo(spellID)
-                local rank, maxRank = getProfessionRanks(name)
+                local profName = name
+                if prof.main then
+                    profName = GetSpellInfo(prof.main)
+                end
+                local rank, maxRank = getProfessionRanks(profName)
                 if not PM.db.hideRank and PM.db.hideMaxRank then
                     name = name .. " |cFF00FFFF("..rank..")"
                 end
@@ -331,7 +338,7 @@ local function ProfessionMenu_DewdropRegister(self)
                 'isTitle', true,
                 'notCheckable', true
             )
-            PM:GetProfessions()
+            PM:AddProfessions()
             local divider
 
             local SummonItems = returnItemIDs()
