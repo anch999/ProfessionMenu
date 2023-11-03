@@ -1,7 +1,7 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
 local dewdrop = AceLibrary("Dewdrop-2.0")
 local mainframe = CreateFrame("FRAME", "ProfessionMenuExtractFrame", UIParent,"UIPanelDialogTemplate")
-    mainframe:SetSize(460,508)
+    mainframe:SetSize(640,508)
     mainframe:SetPoint("CENTER",0,0)
     mainframe:EnableMouse(true)
     mainframe:SetMovable(true)
@@ -36,6 +36,79 @@ PM.FilterList = {
         "Bag 4",
     }
 }
+
+local enchantingMats = {
+    ["Commen"] = {
+        -- Classic Mats
+        {itemLevel = {5,15}, dust = {10940, " 1-3"}, Essence = {10938, " 1-2"}},
+        {itemLevel = {16,20},dust = {10940, " 2-5"}, Essence = {10939, " 1-2"}},
+        {itemLevel = {21,25},dust = {10940, " 2-5"}, Essence = {10998, " 1-2"}},
+        {itemLevel = {26,30},dust = {11083, " 1-3"}, Essence = {11082, " 1-2"}},
+        {itemLevel = {31,35},dust = {11083, " 2-5"}, Essence = {11134, " 1-2"}},
+        {itemLevel = {36,40},dust = {11137, " 1-3"}, Essence = {11135, " 1-2"}},
+        {itemLevel = {41,45},dust = {11137, " 2-5"}, Essence = {11174, " 1-2"}},
+        {itemLevel = {46,50},dust = {11176, " 1-3"}, Essence = {11175, " 1-2"}},
+        {itemLevel = {51,55},dust = {11176, " 2-5"}, Essence = {16202, " 1-2"}},
+        {itemLevel = {56,60},dust = {16204, " 1-3"}, Essence = {16203, " 1-2"}},
+        {itemLevel = {61,65},dust = {16204, " 2-5"}, Essence = {16203, " 1-3"}},
+        -- TBC Mats
+        {itemLevel = {80,99},dust = {22445, " 1-3"}, Essence = {22447, " 1-3"}},
+        {itemLevel = {100,120},dust = {22445, " 2-5"}, Essence = {22446, " 1-2"}},
+        -- Wrath Mats
+        {itemLevel = {130,151},dust = {34054, " 2-3"}, Essence = {34056, " 1-2"}},
+        {itemLevel = {152,200},dust = {34054, " 4-7"}, Essence = {34055, " 1-2"}},
+    },
+    ["Rare"] = {
+        -- Classic Mats
+        {itemLevel = {16,25}, Shard = 10978},
+        {itemLevel = {26,30}, Shard = 11084},
+        {itemLevel = {31,35}, Shard = 11138},
+        {itemLevel = {36,40}, Shard = 11139},
+        {itemLevel = {41,45}, Shard = 11177},
+        {itemLevel = {46,50}, Shard = 11178},
+        {itemLevel = {51,55}, Shard = 14343},
+        {itemLevel = {56,65}, Shard = 14344},
+        -- TBC Mats
+        {itemLevel = {80,99}, Shard = 22448},
+        {itemLevel = {100,120}, Shard = 22449},
+        -- Wrath Mats
+        {itemLevel = {130,151}, Shard = 34053},
+        {itemLevel = {152,200}, Shard = 34052},
+    },
+    ["Epic"] = {
+        {itemLevel = {56,80}, Crystal = 20725},
+        -- TBC Mats
+        {itemLevel = {95,164}, Crystal = 22450},
+        -- Wrath Mats
+        {itemLevel = {165,264}, Crystal = 34057},
+    }
+}
+
+local function GetPosibleMats(quality, itemLevel)
+    if quality == 2 then
+        for _, mat in ipairs (enchantingMats.Commen) do
+            if itemLevel >= mat.itemLevel[1]  and itemLevel <= mat.itemLevel[2] then
+                local itemLink = select(2,GetItemInfo(mat.dust[1]))..mat.dust[2]
+                local itemLink2 = select(2,GetItemInfo(mat.Essence[1]))..mat.Essence[2]
+                return itemLink, itemLink2
+            end
+        end
+    elseif quality == 3 then
+        for _, mat in ipairs (enchantingMats.Rare) do
+            if itemLevel >= mat.itemLevel[1]  and itemLevel <= mat.itemLevel[2] then
+                local itemLink = select(2,GetItemInfo(mat.Shard))
+                return itemLink
+            end
+        end
+    elseif quality == 4 then
+        for _, mat in ipairs (enchantingMats.Epic) do
+            if itemLevel >= mat.itemLevel[1]  and itemLevel <= mat.itemLevel[2] then
+                local itemLink = select(2,GetItemInfo(mat.Crystal))
+                return itemLink
+            end
+        end
+    end
+end
 
 local InventoryTypes = {
     ["Weapon"] = true,
@@ -77,9 +150,9 @@ function PM:SearchBags()
                     local quality,_,_,link = select(4,GetContainerItemInfo(bagID,slotID))
                     local itemID = GetContainerItemID(bagID,slotID)
                     if link and not PM.db.ItemBlacklist[itemID] then
-                        local itemType = select(6,GetItemInfo(itemID))
+                        local itemLevel, _, itemType = select(4,GetItemInfo(itemID))
                         if not filterCheck(quality, bagID, slotID) and InventoryTypes[itemType] then
-                            tinsert(inventoryItems,{bagID,slotID,link,quality})
+                            tinsert(inventoryItems,{bagID,slotID,link,quality,itemLevel})
                         end
                     end
                 end
@@ -173,8 +246,8 @@ local MAX_ROWS = 25      -- How many rows can be shown at once?
 
 local scrollFrame = CreateFrame("Frame", "ProfessionMenu_DE_ScrollFrame", ProfessionMenuExtractFrame)
     scrollFrame:EnableMouse(true)
-    scrollFrame:SetSize(420, ROW_HEIGHT * MAX_ROWS + 16)
-    scrollFrame:SetPoint("TOPLEFT",20,-42)
+    scrollFrame:SetSize(mainframe:GetWidth()-40, ROW_HEIGHT * MAX_ROWS + 16)
+    scrollFrame:SetPoint("TOP",0,-42)
     scrollFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 16,
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
@@ -190,7 +263,14 @@ function ProfessionMenu_InventroyScrollFrameUpdate()
         scrollFrame.rows[i]:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
 		if value <= maxValue then
 			local row = scrollFrame.rows[i]
+            local text1, text2 = GetPosibleMats(inventoryItems[value][4], inventoryItems[value][5])
             row.Text:SetText(inventoryItems[value][3])
+            row.Text1:SetText(text1)
+            if text2 then
+                row.Text2:SetText(text2)
+            else
+                row.Text2:SetText("")
+            end
             row.link = inventoryItems[value][3]
 			row.bag = inventoryItems[value][1]
             row.slot = inventoryItems[value][2]
@@ -221,12 +301,17 @@ local rows = setmetatable({}, { __index = function(t, i)
 	row:SetSize(405, ROW_HEIGHT)
 	row:SetNormalFontObject(GameFontHighlightLeft)
     row.Text = row:CreateFontString("$parentRow"..i.."Text","OVERLAY","GameFontNormal")
-    row.Text:SetSize(260, ROW_HEIGHT)
+    row.Text:SetSize(230, ROW_HEIGHT)
     row.Text:SetPoint("LEFT",row)
     row.Text:SetJustifyH("LEFT")
-    row:SetScript("OnMouseDown", function()
-        PM:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-    end)
+    row.Text1 = row:CreateFontString("$parentRow"..i.."Text1","OVERLAY","GameFontNormal")
+    row.Text1:SetSize(180, ROW_HEIGHT)
+    row.Text1:SetPoint("LEFT",row,230,0)
+    row.Text1:SetJustifyH("LEFT")
+    row.Text2 = row:CreateFontString("$parentRow"..i.."Text2","OVERLAY","GameFontNormal")
+    row.Text2:SetSize(180, ROW_HEIGHT)
+    row.Text2:SetPoint("LEFT",row,390,0)
+    row.Text2:SetJustifyH("LEFT")
     row:SetScript("OnEnter", function(self)
         ItemTemplate_OnEnter(self)
     end)
@@ -236,7 +321,6 @@ local rows = setmetatable({}, { __index = function(t, i)
 	else
 		row:SetPoint("TOPLEFT", scrollFrame.rows[i-1], "BOTTOMLEFT")
 	end
-
 	rawset(t, i, row)
 	return row
 end })

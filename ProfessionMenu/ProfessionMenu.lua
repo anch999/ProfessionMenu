@@ -194,7 +194,7 @@ end
 local items = {
     {1777028, "Summon Thermal Anvil"}, -- thermal anvil
     {1904514, "Summon Sanguine Workbench"}, -- sanguine workbench vanity
-    {1904515},
+    {1904515}, -- sanguine workbench soulbound
 }
 
 -- deletes item from players inventory if value 2 in the items table is set
