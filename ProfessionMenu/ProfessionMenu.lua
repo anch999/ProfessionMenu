@@ -28,7 +28,8 @@ local DefaultSettings  = {
     { TableName = "BagFilter", {false,false,false,false,false} },
     { TableName = "ItemBlacklist", { [9149] = true }},
     { TableName = "hideMaxRank", false, CheckBox = "ProfessionMenuOptions_HideMaxRank"},
-    { TableName = "hideRank", false, CheckBox = "ProfessionMenuOptions_HideRank"}
+    { TableName = "hideRank", false, CheckBox = "ProfessionMenuOptions_HideRank"},
+    { TableName = "ShowOldTradeSkillUI", false, CheckBox = "ProfessionMenuOptions_ShowOldTradeSkillUI"}
 }
 
 --[[ TableName = Name of the saved setting
@@ -567,9 +568,20 @@ function PM:OnEnable()
         SlashCommand(msg)
     end
     PM:RegisterEvent("ADDON_LOADED")
-    
+    if PM.db.ShowOldTradeSkillUI then
+        UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
+        PM:RegisterEvent("TRADE_SKILL_SHOW")
+    end
+
     --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
 	tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
+end
+
+function PM:TRADE_SKILL_SHOW()
+    TradeSkillFrame_LoadUI()
+	if TradeSkillFrame_Show then
+		TradeSkillFrame_Show()
+	end
 end
 
 local function GetTipAnchor(frame)

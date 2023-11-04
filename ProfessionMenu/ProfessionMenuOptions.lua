@@ -101,8 +101,25 @@ end
 	hideMaxRank.Lable:SetText("Hide profession max rank")
 	hideMaxRank:SetScript("OnClick", function() PM.db.hideMaxRank = not PM.db.hideMaxRank end)
 
+	local showOldTradeUI = CreateFrame("CheckButton", "ProfessionMenuOptions_ShowOldTradeSkillUI", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
+	showOldTradeUI:SetPoint("TOPLEFT", 15, -305)
+	showOldTradeUI.Lable = showOldTradeUI:CreateFontString(nil , "BORDER", "GameFontNormal")
+	showOldTradeUI.Lable:SetJustifyH("LEFT")
+	showOldTradeUI.Lable:SetPoint("LEFT", 30, 0)
+	showOldTradeUI.Lable:SetText("Show old Blizzard Trade Skill UI")
+	showOldTradeUI:SetScript("OnClick", function()
+		PM.db.ShowOldTradeSkillUI = not PM.db.ShowOldTradeSkillUI
+		if PM.db.ShowOldTradeSkillUI then
+			UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
+			PM:RegisterEvent("TRADE_SKILL_SHOW")
+		else
+			PM:UnregisterEvent("TRADE_SKILL_SHOW")
+			UIParent:RegisterEvent("TRADE_SKILL_SHOW")
+		end
+	end)
+
 	local txtSize = CreateFrame("Button", "ProfessionMenuOptions_TxtSizeMenu", ProfessionMenuOptionsFrame, "UIDropDownMenuTemplate")
-	txtSize:SetPoint("TOPLEFT", 15, -310)
+	txtSize:SetPoint("TOPLEFT", 15, -345)
 	txtSize.Lable = txtSize:CreateFontString(nil , "BORDER", "GameFontNormal")
 	txtSize.Lable:SetJustifyH("LEFT")
 	txtSize.Lable:SetPoint("LEFT", txtSize, 190, 0)
