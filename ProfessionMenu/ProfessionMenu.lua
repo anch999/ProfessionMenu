@@ -61,6 +61,57 @@ local function setupSettings(db)
     end
 end
 
+local profCooldowns = {
+    ["Enchanting"] = {
+        28027, -- Prismatic Sphere 
+        28028, -- Void Sphere 
+        979343, -- Transmute: Forbidding Dread Dust 
+        979341, -- Transmute: Forbidding Nether Shard 
+        979342, -- Transmute: Forbidding Twisted Dust 
+        979344, -- Transmute: Forbidding Void Dust 
+    },
+    ["Alchemy"] = {
+        29688, -- Transmute: Primal Might 
+        32765, -- Transmute: Earthstorm Diamond 
+        32766, -- Transmute: Skyfire Diamond 
+        28566, -- Transmute: Primal Air to Fire 
+        28567, -- Transmute: Primal Earth to Water 
+        28568, -- Transmute: Primal Fire to Earth 
+        28569, -- Transmute: Primal Water to Air 
+    },
+    ["Jewelcrafting"] = {
+        47280, -- Brilliant Glass 
+        979840, -- Transmute: Pure Void Metal 
+        979838, -- Transmute: Pure Twisted Metal 
+        979837, -- Transmute: Pure Nether Metal 
+        979839, -- Transmute: Pure Dread Metal 
+    },
+    ["Leatherworking"] = {
+        979331, -- Transmute: Full Grain Dread Leather 
+        979329, -- Transmute: Full Grain Nether Leather 
+        979330, -- Transmute: Full Grain Twisted Leather 
+        979332, -- Transmute: Full Grain Void Leather 
+    },
+    ["Tailoring"] = {
+        26751, -- Primal Mooncloth 
+        36686, -- Shadowcloth 
+        31373, -- Spellcloth 
+        979327, -- Transmute: Reinforced Dread Thread 
+        979325, -- Transmute: Reinforced Nether Thread 
+        979326, -- Transmute: Reinforced Void Thread 
+        979328, -- Transmute: Reinforced Twisted Thread 
+    },
+    ["Engineering"] = {
+        979835, -- Transmute: Pure Dread Metal 
+        979833, -- Transmute: Pure Nether Metal 
+        979836, -- Transmute: Pure Void Metal 
+        979834, -- Transmute: Pure Twisted Metal 
+    },
+    ["Mining"] = {
+        979337, -- Transmute: Pure Nether Metal 
+    },
+}
+
 local profList = {
     {
         51304, -- Grand Master 450
@@ -119,7 +170,7 @@ local profList = {
         3104, -- Journeyman 150
         2108, -- Apprentice 75
     }, --LEATHERWORKING
-    { 
+    {
     2656,
     main = 50310 -- mining spellid for rank info
     }, --SMELTING
@@ -154,6 +205,7 @@ local profSubList = {
     13262,
     31252,
     818,
+    1804,
 }
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
 	PM:RemoveItem(arg2)
@@ -282,7 +334,7 @@ function PM:AddProfessions()
 
      for _, prof in ipairs(profList) do
         for _, spellID in ipairs(prof) do
-            if CA_IsSpellKnown(spellID) then
+            if IsSpellKnown(spellID) then
                 local name, _, icon = GetSpellInfo(spellID)
                 local profName = name
                 if prof.main then
@@ -319,6 +371,7 @@ function PM:AddProfessions()
                         'tooltipTitle', tooltipTitle,
                         'tooltipText', tooltipText
                 )
+                break
             end
         end
     end
