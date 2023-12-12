@@ -101,8 +101,16 @@ end
 	hideMaxRank.Lable:SetText("Hide profession max rank")
 	hideMaxRank:SetScript("OnClick", function() PM.db.hideMaxRank = not PM.db.hideMaxRank end)
 
+	local showHerb = CreateFrame("CheckButton", "ProfessionMenuOptions_ShowHerb", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
+	showHerb:SetPoint("TOPLEFT", 15, -305)
+	showHerb.Lable = showHerb:CreateFontString(nil , "BORDER", "GameFontNormal")
+	showHerb.Lable:SetJustifyH("LEFT")
+	showHerb.Lable:SetPoint("LEFT", 30, 0)
+	showHerb.Lable:SetText("Show Herbalism")
+	showHerb:SetScript("OnClick", function() PM.db.showHerb = not PM.db.showHerb end)
+
 	local showOldTradeUI = CreateFrame("CheckButton", "ProfessionMenuOptions_ShowOldTradeSkillUI", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
-	showOldTradeUI:SetPoint("TOPLEFT", 15, -305)
+	showOldTradeUI:SetPoint("TOPLEFT", 15, -335)
 	showOldTradeUI.Lable = showOldTradeUI:CreateFontString(nil , "BORDER", "GameFontNormal")
 	showOldTradeUI.Lable:SetJustifyH("LEFT")
 	showOldTradeUI.Lable:SetPoint("LEFT", 30, 0)
@@ -119,7 +127,7 @@ end
 	end)
 
 	local txtSize = CreateFrame("Button", "ProfessionMenuOptions_TxtSizeMenu", ProfessionMenuOptionsFrame, "UIDropDownMenuTemplate")
-	txtSize:SetPoint("TOPLEFT", 15, -345)
+	txtSize:SetPoint("TOPLEFT", 15, -370)
 	txtSize.Lable = txtSize:CreateFontString(nil , "BORDER", "GameFontNormal")
 	txtSize.Lable:SetJustifyH("LEFT")
 	txtSize.Lable:SetPoint("LEFT", txtSize, 190, 0)

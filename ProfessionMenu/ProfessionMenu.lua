@@ -29,6 +29,7 @@ local DefaultSettings  = {
     { TableName = "ItemBlacklist", { [9149] = true }},
     { TableName = "hideMaxRank", false, CheckBox = "ProfessionMenuOptions_HideMaxRank"},
     { TableName = "hideRank", false, CheckBox = "ProfessionMenuOptions_HideRank"},
+    { TableName = "showHerb", false, CheckBox = "ProfessionMenuOptions_ShowHerb"},
     { TableName = "ShowOldTradeSkillUI", false, CheckBox = "ProfessionMenuOptions_ShowOldTradeSkillUI"}
 }
 
@@ -174,6 +175,7 @@ local profList = {
     2656,
     main = 50310 -- mining spellid for rank info
     }, --SMELTING
+    {2383, Name = "Herbalism", Show = "showHerb" }, --Herbalism
     {
         51309, -- Grand Master 450
         26790, -- Master 375
@@ -206,6 +208,7 @@ local profSubList = {
     31252,
     818,
     1804,
+    8200016,
 }
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
 	PM:RemoveItem(arg2)
@@ -334,8 +337,11 @@ function PM:AddProfessions()
 
      for _, prof in ipairs(profList) do
         for _, spellID in ipairs(prof) do
-            if IsSpellKnown(spellID) then
+            if IsSpellKnown(spellID) and ((prof.Show and PM.db[prof.Show]) or not prof.Show) then
                 local name, _, icon = GetSpellInfo(spellID)
+                if prof.Name then
+                    name = prof.Name
+                end
                 local profName = name
                 if prof.main then
                     profName = GetSpellInfo(prof.main)
