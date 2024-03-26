@@ -8,13 +8,15 @@ function PM:Options_Toggle()
 	end
 end
 
-function PM:OpenOptions()
+function ProfessionMenu_OpenOptions()
 	if InterfaceOptionsFrame:GetWidth() < 850 then InterfaceOptionsFrame:SetWidth(850) end
-	PM:DropDownInitialize()
+	ProfessionMenu_DropDownInitialize()
 	UIDropDownMenu_SetText(ProfessionMenuOptions_TxtSizeMenu, PM.db.txtSize)
 end
 
 --Creates the options frame and all its assets
+
+function PM:CreateOptionsUI()
 	if InterfaceOptionsFrame:GetWidth() < 850 then InterfaceOptionsFrame:SetWidth(850) end
 	local mainframe = {}
 		mainframe.panel = CreateFrame("FRAME", "ProfessionMenuOptionsFrame", UIParent, nil)
@@ -31,12 +33,12 @@ end
 	hideMenu.Lable:SetPoint("LEFT", 30, 0)
 	hideMenu.Lable:SetText("Hide Standalone Button")
 	hideMenu:SetScript("OnClick", function() 
-		if PM.db.HideMenu then
+		if self.db.HideMenu then
 			ProfessionMenuFrame:Show()
-			PM.db.HideMenu = false
+			self.db.HideMenu = false
 		else
 			ProfessionMenuFrame:Hide()
-			PM.db.HideMenu = true
+			self.db.HideMenu = true
 		end
 	end)
 
@@ -47,16 +49,16 @@ end
 	hideHover.Lable:SetPoint("LEFT", 30, 0)
 	hideHover.Lable:SetText("Only Show Standalone Button on Hover")
 	hideHover:SetScript("OnClick", function()
-		if PM.db.ShowMenuOnHover then
+		if self.db.ShowMenuOnHover then
 			ProfessionMenuFrame_Menu:Show()
             ProfessionMenuFrame.icon:Show()
 			ProfessionMenuFrame.Text:Show()
-			PM.db.ShowMenuOnHover = false
+			self.db.ShowMenuOnHover = false
 		else
 			ProfessionMenuFrame_Menu:Hide()
             ProfessionMenuFrame.icon:Hide()
 			ProfessionMenuFrame.Text:Hide()
-			PM.db.ShowMenuOnHover = true
+			self.db.ShowMenuOnHover = true
 		end
 
 	end)
@@ -67,7 +69,7 @@ end
 	hideMinimap.Lable:SetJustifyH("LEFT")
 	hideMinimap.Lable:SetPoint("LEFT", 30, 0)
 	hideMinimap.Lable:SetText("Hide Minimap Icon")
-	hideMinimap:SetScript("OnClick", function() PM:ToggleMinimap() end)
+	hideMinimap:SetScript("OnClick", function() self:ToggleMinimap() end)
 
 	local itemDel = CreateFrame("CheckButton", "ProfessionMenuOptions_DeleteMenu", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
 	itemDel:SetPoint("TOPLEFT", 15, -165)
@@ -75,7 +77,7 @@ end
 	itemDel.Lable:SetJustifyH("LEFT")
 	itemDel.Lable:SetPoint("LEFT", 30, 0)
 	itemDel.Lable:SetText("Delete vanity items after summoning")
-	itemDel:SetScript("OnClick", function() PM.db.DeleteItem = not PM.db.DeleteItem end)
+	itemDel:SetScript("OnClick", function() self.db.DeleteItem = not self.db.DeleteItem end)
 
 	local autoMenu = CreateFrame("CheckButton", "ProfessionMenuOptions_AutoMenu", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
 	autoMenu:SetPoint("TOPLEFT", 15, -200)
@@ -83,7 +85,7 @@ end
 	autoMenu.Lable:SetJustifyH("LEFT")
 	autoMenu.Lable:SetPoint("LEFT", 30, 0)
 	autoMenu.Lable:SetText("Show menu on hover")
-	autoMenu:SetScript("OnClick", function() PM.db.autoMenu = not PM.db.autoMenu end)
+	autoMenu:SetScript("OnClick", function() self.db.autoMenu = not self.db.autoMenu end)
 
 	local hideRank = CreateFrame("CheckButton", "ProfessionMenuOptions_HideRank", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
 	hideRank:SetPoint("TOPLEFT", 15, -235)
@@ -91,7 +93,7 @@ end
 	hideRank.Lable:SetJustifyH("LEFT")
 	hideRank.Lable:SetPoint("LEFT", 30, 0)
 	hideRank.Lable:SetText("Hide profession rank")
-	hideRank:SetScript("OnClick", function() PM.db.hideRank = not PM.db.hideRank end)
+	hideRank:SetScript("OnClick", function() self.db.hideRank = not self.db.hideRank end)
 
 	local hideMaxRank = CreateFrame("CheckButton", "ProfessionMenuOptions_HideMaxRank", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
 	hideMaxRank:SetPoint("TOPLEFT", 15, -270)
@@ -99,7 +101,7 @@ end
 	hideMaxRank.Lable:SetJustifyH("LEFT")
 	hideMaxRank.Lable:SetPoint("LEFT", 30, 0)
 	hideMaxRank.Lable:SetText("Hide profession max rank")
-	hideMaxRank:SetScript("OnClick", function() PM.db.hideMaxRank = not PM.db.hideMaxRank end)
+	hideMaxRank:SetScript("OnClick", function() self.db.hideMaxRank = not self.db.hideMaxRank end)
 
 	local showHerb = CreateFrame("CheckButton", "ProfessionMenuOptions_ShowHerb", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
 	showHerb:SetPoint("TOPLEFT", 15, -305)
@@ -107,7 +109,7 @@ end
 	showHerb.Lable:SetJustifyH("LEFT")
 	showHerb.Lable:SetPoint("LEFT", 30, 0)
 	showHerb.Lable:SetText("Show Herbalism")
-	showHerb:SetScript("OnClick", function() PM.db.showHerb = not PM.db.showHerb end)
+	showHerb:SetScript("OnClick", function() self.db.showHerb = not self.db.showHerb end)
 
 	local showOldTradeUI = CreateFrame("CheckButton", "ProfessionMenuOptions_ShowOldTradeSkillUI", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
 	showOldTradeUI:SetPoint("TOPLEFT", 15, -335)
@@ -116,12 +118,12 @@ end
 	showOldTradeUI.Lable:SetPoint("LEFT", 30, 0)
 	showOldTradeUI.Lable:SetText("Show old Blizzard Trade Skill UI")
 	showOldTradeUI:SetScript("OnClick", function()
-		PM.db.ShowOldTradeSkillUI = not PM.db.ShowOldTradeSkillUI
-		if PM.db.ShowOldTradeSkillUI then
+		self.db.ShowOldTradeSkillUI = not self.db.ShowOldTradeSkillUI
+		if self.db.ShowOldTradeSkillUI then
 			UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
-			PM:RegisterEvent("TRADE_SKILL_SHOW")
+			self:RegisterEvent("TRADE_SKILL_SHOW")
 		else
-			PM:UnregisterEvent("TRADE_SKILL_SHOW")
+			self:UnregisterEvent("TRADE_SKILL_SHOW")
 			UIParent:RegisterEvent("TRADE_SKILL_SHOW")
 		end
 	end)
@@ -132,8 +134,11 @@ end
 	txtSize.Lable:SetJustifyH("LEFT")
 	txtSize.Lable:SetPoint("LEFT", txtSize, 190, 0)
 	txtSize.Lable:SetText("Menu Text Size")
+end
 
-	local function options_Menu_Initialize()
+PM:CreateOptionsUI()
+
+	function ProfessionMenu_Options_Menu_Initialize()
 		local info
 		for i = 10, 25 do
 					info = {
@@ -148,9 +153,9 @@ end
 		end
 	end
 
-	function PM:DropDownInitialize()
+	function ProfessionMenu_DropDownInitialize()
 		--Setup for Dropdown menus in the settings
-		UIDropDownMenu_Initialize(ProfessionMenuOptions_TxtSizeMenu, options_Menu_Initialize)
+		UIDropDownMenu_Initialize(ProfessionMenuOptions_TxtSizeMenu, ProfessionMenu_Options_Menu_Initialize )
 		UIDropDownMenu_SetSelectedID(ProfessionMenuOptions_TxtSizeMenu)
 		UIDropDownMenu_SetWidth(ProfessionMenuOptions_TxtSizeMenu, 150)
 	end

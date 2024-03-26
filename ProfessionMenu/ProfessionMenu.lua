@@ -1,6 +1,5 @@
-ProfessionMenu = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceConsole-3.0", "AceTimer-3.0", "AceEvent-3.0", "AceComm-3.0", "AceSerializer-3.0")
-local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
-local addonName = ...
+local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0")
+PROFESSIONMENU = PM
 local professionbutton, mainframe
 local dewdrop = AceLibrary("Dewdrop-2.0")
 local defIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
@@ -8,13 +7,11 @@ local icon = LibStub('LibDBIcon-1.0')
 local CYAN =  "|cff00ffff"
 local WHITE = "|cffFFFFFF"
 
-PROFESSIONMENU_MINIMAP = LibStub:GetLibrary('LibDataBroker-1.1'):NewDataObject(addonName, {
+local minimap = LibStub:GetLibrary('LibDataBroker-1.1'):NewDataObject("ProfessionMenu", {
     type = 'data source',
     text = "ProfessionMenu",
     icon = defIcon,
   })
-local minimap = PROFESSIONMENU_MINIMAP
-
 
 --Set Savedvariables defaults
 local DefaultSettings  = {
@@ -137,7 +134,7 @@ local profList = {
         7413, -- Expert 225
         7412, -- Journeyman 150
         7411, -- Apprentice 75
-        frame = {"ProfessionMenuExtractFrame", "Enchanting", "Right click to open disenchanting frame"}
+        frame = {_G["PROFESSIONMENU"]["Extractframe"], "Enchanting", "Right click to open disenchanting frame"}
     }, --ENCHANTING
     {
         51306, -- Grand Master 450
@@ -210,8 +207,48 @@ local profSubList = {
     1804,
     8200016,
 }
+
+function PM:OnEnable()
+    if icon then
+        self.map = {hide = self.db.minimap}
+        icon:Register('ProfessionMenu', minimap, self.map)
+    end
+
+    if self.db.menuPos then
+        local pos = self.db.menuPos
+        mainframe:ClearAllPoints()
+        mainframe:SetPoint(pos[1], pos[2], pos[3], pos[4], pos[5])
+    else
+        mainframe:ClearAllPoints()
+        mainframe:SetPoint("CENTER", UIParent)
+    end
+
+    self:ToggleMainButton("hide")
+
+    --self:RegisterEvent("ADDON_LOADED")
+    if self.db.ShowOldTradeSkillUI then
+        UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
+        self:RegisterEvent("TRADE_SKILL_SHOW")
+    end
+
+    --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
+	tinsert(UISpecialFrames, self.Extractframe)
+end
+
+function PM:OnInitialize()
+    if not ProfessionMenuDB then ProfessionMenuDB = {} end
+    self.db = ProfessionMenuDB
+    setupSettings(self.db)
+    --Enable the use of /PM or /PROFESSIONMENU to open the loot browser
+    SLASH_PROFESSIONMENU1 = "/PROFESSIONMENU"
+    SLASH_PROFESSIONMENU2 = "/PM"
+    SlashCmdList["PROFESSIONMENU"] = function(msg)
+        PM:SlashCommand(msg)
+    end
+end
+
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
-	PM:RemoveItem(arg2)
+	self:RemoveItem(arg2)
 end
 
 local cTip = CreateFrame("GameTooltip","cTooltip",nil,"GameTooltipTemplate")
@@ -255,23 +292,23 @@ local items = {
 
 -- deletes item from players inventory if value 2 in the items table is set
 function PM:RemoveItem(arg2)
-	if not PM.db.DeleteItem then return end
+	if not self.db.DeleteItem then return end
 	for _, item in ipairs(items) do
         if arg2 == item[2] then
-            local found, bag, slot = PM:HasItem(item[1])
-            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and PM:IsSoulbound(bag, slot) then
+            local found, bag, slot = self:HasItem(item[1])
+            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and self:IsSoulbound(bag, slot) then
                 PickupContainerItem(bag, slot)
                 DeleteCursorItem()
             end
         end
 	end
-	PM:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+	self:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end
 
-local function returnItemIDs()
+function PM:ReturnItemIDs()
     local list = {}
     for _, item in ipairs(items) do
-        if PM:HasItem(item[1]) or C_VanityCollection.IsCollectionItemOwned(item[1]) then
+        if self:HasItem(item[1]) or C_VanityCollection.IsCollectionItemOwned(item[1]) then
             tinsert(list, item[1])
         end
     end
@@ -279,7 +316,7 @@ local function returnItemIDs()
 end
 
 -- returns a list of known spellIDs
-local function returnSpellIDs()
+function PM:ReturnSpellIDs()
     local list = {}
     for _, spellID in ipairs(profSubList) do
         if CA_IsSpellKnown(spellID) then
@@ -290,7 +327,7 @@ local function returnSpellIDs()
 end
 
 -- add altar summon button via dewdrop secure
-local function addItem(itemID)
+function PM:AddItem(itemID)
         local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemID)
         local startTime, duration = GetItemCooldown(itemID)
 		local cooldown = math.ceil(((duration - (GetTime() - startTime))/60))
@@ -306,9 +343,9 @@ local function addItem(itemID)
                 'text', text,
                 'icon', icon,
                 'secure', secure,
-                'func', function() if not PM:HasItem(itemID) then RequestDeliverVanityCollectionItem(itemID) else if PM.db.DeleteItem then PM:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED") end dewdrop:Close() end end,
-                'textHeight', PM.db.txtSize,
-                'textWidth', PM.db.txtSize
+                'func', function() if not self:HasItem(itemID) then RequestDeliverVanityCollectionItem(itemID) else if self.db.DeleteItem then self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED") end dewdrop:Close() end end,
+                'textHeight', self.db.txtSize,
+                'textWidth', self.db.txtSize
         )
 end
 
@@ -317,8 +354,8 @@ function PM:AddDividerLine(maxLenght)
     local text = WHITE.."----------------------------------------------------------------------------------------------------"
     dewdrop:AddLine(
         'text' , text:sub(1, maxLenght),
-        'textHeight', PM.db.txtSize,
-        'textWidth', PM.db.txtSize,
+        'textHeight', self.db.txtSize,
+        'textWidth', self.db.txtSize,
         'isTitle', true,
         "notCheckable", true
     )
@@ -337,7 +374,7 @@ function PM:AddProfessions()
 
      for _, prof in ipairs(profList) do
         for _, spellID in ipairs(prof) do
-            if IsSpellKnown(spellID) and ((prof.Show and PM.db[prof.Show]) or not prof.Show) then
+            if IsSpellKnown(spellID) and ((prof.Show and self.db[prof.Show]) or not prof.Show) then
                 local name, _, icon = GetSpellInfo(spellID)
                 if prof.Name then
                     name = prof.Name
@@ -347,13 +384,13 @@ function PM:AddProfessions()
                     profName = GetSpellInfo(prof.main)
                 end
                 local rank, maxRank = getProfessionRanks(profName)
-                if not PM.db.hideRank and PM.db.hideMaxRank then
+                if not self.db.hideRank and self.db.hideMaxRank then
                     name = name .. " |cFF00FFFF("..rank..")"
                 end
-                if not PM.db.hideMaxRank and PM.db.hideRank then
+                if not self.db.hideMaxRank and self.db.hideRank then
                     name = name .. " |cFF00FFFF("..maxRank..")"
                 end
-                if not PM.db.hideMaxRank and not PM.db.hideRank then
+                if not self.db.hideMaxRank and not self.db.hideRank then
                     name = name .. " |cFF00FFFF("..rank.."/"..maxRank..")"
                 end
                 local secure = {
@@ -371,9 +408,9 @@ function PM:AddProfessions()
                         'icon', icon,
                         'secure', secure,
                         'closeWhenClicked', true,
-                        'funcRight', function() PM:InventoryFrame_Open(openFrame) end,
-                        'textHeight', PM.db.txtSize,
-                        'textWidth', PM.db.txtSize,
+                        'funcRight', function() self:InventoryFrame_Open(openFrame) end,
+                        'textHeight', self.db.txtSize,
+                        'textWidth', self.db.txtSize,
                         'tooltipTitle', tooltipTitle,
                         'tooltipText', tooltipText
                 )
@@ -384,64 +421,62 @@ function PM:AddProfessions()
 end
 
 --sets up the drop down menu for specs
-local function ProfessionMenu_DewdropRegister(self)
-    if dewdrop:IsOpen(self) then dewdrop:Close() return end
-    dewdrop:Register(self,
-        'point', function(parent)
-            return "TOP", "BOTTOM"
-        end,
+function PM:DewdropRegister(button, showUnlock, resetPoint)
+    if dewdrop:IsOpen(button) then dewdrop:Close() return end
+    dewdrop:Register(button,
+        'point', function(parent) if resetPoint then return nil, nil else return "TOP", "BOTTOM" end end,
         'children', function(level, value)
             dewdrop:AddLine(
                 'text', "|cffffff00Professions",
-                'textHeight', PM.db.txtSize,
-                'textWidth', PM.db.txtSize,
+                'textHeight', self.db.txtSize,
+                'textWidth', self.db.txtSize,
                 'isTitle', true,
                 'notCheckable', true
             )
-            PM:AddProfessions()
+            self:AddProfessions()
             local divider
 
-            local SummonItems = returnItemIDs()
+            local SummonItems = self:ReturnItemIDs()
 
             if #SummonItems > 0 then
-                if not divider then divider = PM:AddDividerLine(35) end
+                if not divider then divider = self:AddDividerLine(35) end
                 for _, itemID in ipairs(SummonItems) do
-                    addItem(itemID)
+                    self:AddItem(itemID)
                 end
             end
 
             if CA_IsSpellKnown(750750) then
-                if not divider then divider = PM:AddDividerLine(35) end
+                if not divider then divider = self:AddDividerLine(35) end
                 local name, _, icon = GetSpellInfo(750750)
                 local secure = { type1 = 'spell', spell = name }
-                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)
+                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)
             end
 
-            local spellIDs = returnSpellIDs()
+            local spellIDs = self:ReturnSpellIDs()
             if #spellIDs > 0 then
-                PM:AddDividerLine(35)
+                self:AddDividerLine(35)
                 for _, spellID in ipairs(spellIDs) do
                     local name, _, icon = GetSpellInfo(spellID)
                     local secure = { type1 = 'spell', spell = spellID }
-                    dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', PM.db.txtSize, 'textWidth', PM.db.txtSize)    
+                    dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)    
                 end
             end
-            PM:AddDividerLine(35)
-            if self.show then
+            self:AddDividerLine(35)
+            if showUnlock then
                 dewdrop:AddLine(
                     'text', "Unlock Frame",
-                    'textHeight', PM.db.txtSize,
-                    'textWidth', PM.db.txtSize,
-                    'func', PM.UnlockFrame,
+                    'textHeight', self.db.txtSize,
+                    'textWidth', self.db.txtSize,
+                    'func', self.UnlockFrame,
                     'notCheckable', true,
                     'closeWhenClicked', true
                 )
             end
             dewdrop:AddLine(
 				'text', "Options",
-                'textHeight', PM.db.txtSize,
-                'textWidth', PM.db.txtSize,
-				'func', PM.Options_Toggle,
+                'textHeight', self.db.txtSize,
+                'textWidth', self.db.txtSize,
+				'func', self.Options_Toggle,
 				'notCheckable', true,
                 'closeWhenClicked', true
 			)
@@ -450,19 +485,19 @@ local function ProfessionMenu_DewdropRegister(self)
                 'textR', 0,
                 'textG', 1,
                 'textB', 1,
-                'textHeight', PM.db.txtSize,
-                'textWidth', PM.db.txtSize,
+                'textHeight', self.db.txtSize,
+                'textWidth', self.db.txtSize,
 				'closeWhenClicked', true,
 				'notCheckable', true
 			)
 		end,
 		'dontHook', true
 	)
-    dewdrop:Open(self)
+    dewdrop:Open(button)
     local hook
     if not hook then
         WorldFrame:HookScript("OnEnter", function()
-            if dewdrop:IsOpen(self) then
+            if dewdrop:IsOpen(button) then
                 dewdrop:Close()
             end
         end)
@@ -472,8 +507,8 @@ local function ProfessionMenu_DewdropRegister(self)
     GameTooltip:Hide()
 end
 
-local function toggleMainButton(toggle)
-    if PM.db.ShowMenuOnHover then
+function PM:ToggleMainButton(toggle)
+    if self.db.ShowMenuOnHover then
         if toggle == "show" then
             ProfessionMenuFrame_Menu:Show()
             ProfessionMenuFrame.icon:Show()
@@ -501,21 +536,22 @@ function PM:UnlockFrame()
     end
 end
 
+function PM:CreateUI()
 --Creates the main interface
 	mainframe = CreateFrame("Button", "ProfessionMenuFrame", UIParent, nil)
     mainframe:SetSize(70,70)
     mainframe:EnableMouse(true)
     
     mainframe:RegisterForDrag("LeftButton")
-    mainframe:SetScript("OnDragStart", function(self) mainframe:StartMoving() end)
-    mainframe:SetScript("OnDragStop", function(self)
+    mainframe:SetScript("OnDragStart", function() mainframe:StartMoving() end)
+    mainframe:SetScript("OnDragStop", function()
         mainframe:StopMovingOrSizing()
-        PM.db.menuPos = {mainframe:GetPoint()}
-        PM.db.menuPos[2] = "UIParent"
+        self.db.menuPos = {mainframe:GetPoint()}
+        self.db.menuPos[2] = "UIParent"
     end)
     mainframe:SetMovable(true)
     mainframe:RegisterForClicks("RightButtonDown")
-    mainframe:SetScript("OnClick", function(self, btnclick) if unlocked then PM:UnlockFrame() end end)
+    mainframe:SetScript("OnClick", function() if unlocked then self:UnlockFrame() end end)
     mainframe.icon = mainframe:CreateTexture(nil, "ARTWORK")
     mainframe.icon:SetSize(55,55)
     mainframe.icon:SetPoint("CENTER", mainframe,"CENTER",0,0)
@@ -531,14 +567,14 @@ end
     mainframe.Highlight:SetTexture("Interface\\AddOns\\AwAddons\\Textures\\EnchOverhaul\\Slot2Selected")
     mainframe.Highlight:Hide()
     mainframe:Hide()
-    mainframe:SetScript("OnEnter", function(self) 
+    mainframe:SetScript("OnEnter", function(button)
         if unlocked then
-            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:SetOwner(button, "ANCHOR_TOP")
             GameTooltip:AddLine("Left click to drag")
             GameTooltip:AddLine("Right click to lock frame")
             GameTooltip:Show()
         else
-            toggleMainButton("show")
+            self:ToggleMainButton("show")
         end
     end)
     mainframe:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -548,38 +584,28 @@ end
     professionbutton:SetPoint("BOTTOM", ProfessionMenuFrame, "BOTTOM", 0, 2)
     professionbutton:RegisterForClicks("LeftButtonDown", "RightButtonDown")
     professionbutton:Show()
-    professionbutton:SetScript("OnClick", function(self, btnclick) if not PM.db.autoMenu then ProfessionMenu_DewdropRegister(self) end end)
-    professionbutton.show = true
-    professionbutton:SetScript("OnEnter", function(self)
-        if PM.db.autoMenu then
-            ProfessionMenu_DewdropRegister(self)
-        end
-        if not dewdrop:IsOpen() then
-        PM:OnEnter(self)
-        end
+    professionbutton:SetScript("OnClick", function(button, btnclick) if not self.db.autoMenu then self:DewdropRegister(button, true) end end)
+    professionbutton:SetScript("OnEnter", function(button)
+        self:OnEnter(button, true)
         mainframe.Highlight:Show()
-        toggleMainButton("show")
+        self:ToggleMainButton("show")
     end)
     professionbutton:SetScript("OnLeave", function()
         mainframe.Highlight:Hide()
         GameTooltip:Hide()
-        toggleMainButton("hide")
+        self:ToggleMainButton("hide")
     end)
+end
+PM:CreateUI()
 
 InterfaceOptionsFrame:HookScript("OnShow", function()
     if InterfaceOptionsFrame and ProfessionMenuOptionsFrame:IsVisible() then
-		PM:OpenOptions()
+		ProfessionMenu_OpenOptions()
     end
 end)
 
-function PM:OnInitialize()
-    if not ProfessionMenuDB then ProfessionMenuDB = {} end
-    PM.db = ProfessionMenuDB
-    setupSettings(PM.db)
-end
-
 -- toggle the main button frame
-local function toggleMainFrame()
+function PM:ToggleMainFrame()
     if ProfessionMenuFrame:IsVisible() then
         ProfessionMenuFrame:Hide()
     else
@@ -588,52 +614,22 @@ local function toggleMainFrame()
 end
 
 --[[
-SlashCommand(msg):
+PM:SlashCommand(msg):
 msg - takes the argument for the /mysticextended command so that the appropriate action can be performed
 If someone types /mysticextended, bring up the options box
 ]]
-local function SlashCommand(msg)
+function PM:SlashCommand(msg)
     if msg == "reset" then
         ProfessionMenuDB = nil
         PM:OnInitialize()
         DEFAULT_CHAT_FRAME:AddMessage("Settings Reset")
     elseif msg == "options" then
         PM:Options_Toggle()
+    elseif msg == "macromenu" then
+        PM:DewdropRegister(GetMouseFocus(), nil, true)
     else
-        toggleMainFrame()
+        PM:ToggleMainFrame()
     end
-end
-
-function PM:OnEnable()
-    if icon then
-        PM.map = {hide = PM.db.minimap}
-        icon:Register('ProfessionMenu', minimap, PM.map)
-    end
-
-    if PM.db.menuPos then
-        local pos = PM.db.menuPos
-        mainframe:ClearAllPoints()
-        mainframe:SetPoint(pos[1], pos[2], pos[3], pos[4], pos[5])
-    else
-        mainframe:ClearAllPoints()
-        mainframe:SetPoint("CENTER", UIParent)
-    end
-
-    toggleMainButton("hide")
-    --Enable the use of /me or /mysticextended to open the loot browser
-    SLASH_PROFESSIONMENU1 = "/PROFESSIONMENU"
-    SLASH_PROFESSIONMENU2 = "/PM"
-    SlashCmdList["PROFESSIONMENU"] = function(msg)
-        SlashCommand(msg)
-    end
-    PM:RegisterEvent("ADDON_LOADED")
-    if PM.db.ShowOldTradeSkillUI then
-        UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
-        PM:RegisterEvent("TRADE_SKILL_SHOW")
-    end
-
-    --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
-	tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
 end
 
 function PM:TRADE_SKILL_SHOW()
@@ -654,7 +650,7 @@ end
 function minimap.OnClick(self, button)
     GameTooltip:Hide()
     if not PM.db.autoMenu then
-        ProfessionMenu_DewdropRegister(self)
+        PM:DewdropRegister(self)
     end
 end
 
@@ -662,25 +658,25 @@ function minimap.OnLeave()
     GameTooltip:Hide()
 end
 
-function PM:OnEnter(self)
-    if PM.db.autoMenu then
-        ProfessionMenu_DewdropRegister(self)
+function PM:OnEnter(button, show)
+    if self.db.autoMenu and not UnitAffectingCombat("player") then
+        self:DewdropRegister(button, show)
     else
-        GameTooltip:SetOwner(self, 'ANCHOR_NONE')
-        GameTooltip:SetPoint(GetTipAnchor(self))
+        GameTooltip:SetOwner(button, 'ANCHOR_NONE')
+        GameTooltip:SetPoint(GetTipAnchor(button))
         GameTooltip:ClearLines()
         GameTooltip:AddLine("ProfessionMenu")
         GameTooltip:Show()
     end
 end
 
-function minimap.OnEnter(self)
-    PM:OnEnter(self)
+function minimap.OnEnter(button)
+    PM:OnEnter(button)
 end
 
 function PM:ToggleMinimap()
-    local hide = not PM.db.minimap
-    PM.db.minimap = hide
+    local hide = not self.db.minimap
+    self.db.minimap = hide
     if hide then
       icon:Hide('ProfessionMenu')
     else
@@ -692,7 +688,7 @@ function PM:UpdateButtonText(i)
     local scrollFrame = HelpMenuFrameRightInsetItemRestorePanel.RecoveryScroll.ScrollFrame
     local text = scrollFrame.buttons[i].SubText:GetText()
     if scrollFrame.buttons[i].item then
-        local spellID = PM:GetRecipeData(scrollFrame.buttons[i].item.ItemEntry, "item")
+        local spellID = self:GetRecipeData(scrollFrame.buttons[i].item.ItemEntry, "item")
         if spellID then
             if CA_IsSpellKnown(spellID) then
                 scrollFrame.buttons[i].SubText:SetText(text.."  |cff1eff00(Known)")
@@ -709,7 +705,7 @@ function PM:InitializeTextUpdate()
         local updateItemButtonOld = updateItemButton.Update
             updateItemButton.Update = function(...)
                 updateItemButtonOld(...)
-                PM:UpdateButtonText(i)
+                self:UpdateButtonText(i)
             end
     end
 end
@@ -729,8 +725,8 @@ end
 function PM:ADDON_LOADED(event, arg1, arg2, arg3)
 	-- setup for auction house window
 	if event == "ADDON_LOADED" and arg1 == "Ascension_HelpUI" then
-        PM:LoadTradeskillRecipes()
-		PM:InitializeTextUpdate()
+        self:LoadTradeskillRecipes()
+		self:InitializeTextUpdate()
 	end
 end
 

@@ -1,27 +1,31 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
 local dewdrop = AceLibrary("Dewdrop-2.0")
-local mainframe = CreateFrame("FRAME", "ProfessionMenuExtractFrame", UIParent,"UIPanelDialogTemplate")
-    mainframe:SetSize(640,508)
-    mainframe:SetPoint("CENTER",0,0)
-    mainframe:EnableMouse(true)
-    mainframe:SetMovable(true)
-    mainframe:RegisterForDrag("LeftButton")
-    mainframe:SetScript("OnDragStart", function(self) mainframe:StartMoving() end)
-    mainframe:SetScript("OnDragStop", function(self) mainframe:StopMovingOrSizing() end)
-    mainframe:SetScript("OnShow", function()
-        PM:SearchBags()
-        PM:RegisterEvent("BAG_UPDATE")
-    end)
-    mainframe:SetScript("OnHide", function()
-        PM:UnregisterEvent("BAG_UPDATE")
-    end)
-    mainframe.TitleText = mainframe:CreateFontString()
-    mainframe.TitleText:SetFont("Fonts\\FRIZQT__.TTF", 12)
-    mainframe.TitleText:SetFontObject(GameFontNormal)
-    mainframe.TitleText:SetText("Disenchanting List")
-    mainframe.TitleText:SetPoint("TOP", 0, -9)
-    mainframe.TitleText:SetShadowOffset(1,-1)
-    mainframe:Hide()
+function PM:CreateInventoryUI()
+    self.Extractframe = CreateFrame("FRAME", "ProfessionMenuExtractFrame", UIParent,"UIPanelDialogTemplate")
+        local mainframe = self.Extractframe
+        mainframe:SetSize(640,508)
+        mainframe:SetPoint("CENTER",0,0)
+        mainframe:EnableMouse(true)
+        mainframe:SetMovable(true)
+        mainframe:RegisterForDrag("LeftButton")
+        mainframe:SetScript("OnDragStart", function(self) mainframe:StartMoving() end)
+        mainframe:SetScript("OnDragStop", function(self) mainframe:StopMovingOrSizing() end)
+        mainframe:SetScript("OnShow", function()
+            self:SearchBags()
+            self:RegisterEvent("BAG_UPDATE")
+        end)
+        mainframe:SetScript("OnHide", function()
+            self:UnregisterEvent("BAG_UPDATE")
+        end)
+        mainframe.TitleText = mainframe:CreateFontString()
+        mainframe.TitleText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+        mainframe.TitleText:SetFontObject(GameFontNormal)
+        mainframe.TitleText:SetText("Disenchanting List")
+        mainframe.TitleText:SetPoint("TOP", 0, -9)
+        mainframe.TitleText:SetShadowOffset(1,-1)
+        mainframe:Hide()
+end
+PM:CreateInventoryUI()
 
 PM.FilterList = {
     [1] = {"Uncommon", 2},
@@ -84,7 +88,7 @@ local enchantingMats = {
     }
 }
 
-local function GetPosibleMats(quality, itemLevel)
+function PM:GetPosibleMats(quality, itemLevel)
     if quality == 2 then
         for _, mat in ipairs (enchantingMats.Commen) do
             if itemLevel >= mat.itemLevel[1]  and itemLevel <= mat.itemLevel[2] then
@@ -117,21 +121,20 @@ local InventoryTypes = {
 
 function PM:InventoryFrame_Open(isEnabled)
     if not isEnabled then return end
-    if mainframe:IsVisible() then
-        mainframe:Hide()
+    if self.Extractframe:IsVisible() then
+        self.Extractframe:Hide()
     else
-        mainframe:Show()
+        self.Extractframe:Show()
     end
 end
 
 function PM:BAG_UPDATE()
-    PM:ScheduleTimer(function() PM:SearchBags() end, .10)
-    
+    self:ScheduleTimer(function() self:SearchBags() end, .10)
 end
 
-local function filterCheck(quality, bagID, slotID)
-    for _, _ in ipairs(PM.FilterList) do
-        if (PM.db.FilterList[4] and PM:IsSoulbound(bagID, slotID)) or (quality < 1 or quality > 5) or PM.db.FilterList[quality-1] then
+function PM:FilterCheck(quality, bagID, slotID)
+    for _, _ in ipairs(self.FilterList) do
+        if (self.db.FilterList[4] and self:IsSoulbound(bagID, slotID)) or (quality < 1 or quality > 5) or self.db.FilterList[quality-1] then
             return true
         end
     end
@@ -145,13 +148,13 @@ function PM:SearchBags()
     if not bagThrottle then
         inventoryItems = {}
         for bagID = 0, 4 do
-            if not PM.db.BagFilter[bagID+1] then
+            if not self.db.BagFilter[bagID+1] then
                 for slotID = 1, GetContainerNumSlots(bagID) do
                     local quality,_,_,link = select(4,GetContainerItemInfo(bagID,slotID))
                     local itemID = GetContainerItemID(bagID,slotID)
-                    if link and not PM.db.ItemBlacklist[itemID] then
+                    if link and not self.db.ItemBlacklist[itemID] then
                         local itemLevel, _, itemType = select(4,GetItemInfo(itemID))
-                        if not filterCheck(quality, bagID, slotID) and InventoryTypes[itemType] then
+                        if not self:FilterCheck(quality, bagID, slotID) and InventoryTypes[itemType] then
                             tinsert(inventoryItems,{bagID,slotID,link,quality,itemLevel})
                         end
                     end
@@ -159,35 +162,37 @@ function PM:SearchBags()
             end
         end
         bagThrottle = true
-        PM.bagThrottle = PM:ScheduleTimer(function() bagThrottle = false end, .1)
-        ProfessionMenu_InventroyScrollFrameUpdate()
+        self.bagThrottle = self:ScheduleTimer(function() bagThrottle = false end, .1)
+        self:InventroyScrollFrameUpdate()
     end
 end
 
-function PM:ItemMenuRegister(self)
-    dewdrop:Register(self,
+function PM:ItemMenuRegister(button)
+    if dewdrop:IsOpen(button) then dewdrop:Close() return end
+
+    dewdrop:Register(button,
         'point', function(parent)
             return "TOP", "BOTTOM"
         end,
         'children', function(level, value)
             if level == 1 then
-                for k, v in ipairs(PM.FilterList) do
+                for k, v in ipairs(self.FilterList) do
                     local text = v[1]
                     if tonumber(v[2]) then
                         text = select(4, GetItemQualityColor(v[2])) .. v[1]
                     end
                     dewdrop:AddLine(
                         'text', text,
-                        'func', function() PM.db.FilterList[k] = not PM.db.FilterList[k] PM:SearchBags() end,
-                        'checked', PM.db.FilterList[k],
+                        'func', function() self.db.FilterList[k] = not self.db.FilterList[k] self:SearchBags() end,
+                        'checked', self.db.FilterList[k],
                         'textHeight', 12,
                         'textWidth', 12
                     )
                 end
                 dewdrop:AddLine(
-                    'text', PM.FilterList.Soulbound,
-                    'func', function() PM.db.FilterList[4] = not PM.db.FilterList[4] PM:SearchBags() end,
-                    'checked', PM.db.FilterList[4],
+                    'text', self.FilterList.Soulbound,
+                    'func', function() self.db.FilterList[4] = not self.db.FilterList[4] self:SearchBags() end,
+                    'checked', self.db.FilterList[4],
                     'textHeight', 12,
                     'textWidth', 12
                 )
@@ -211,11 +216,11 @@ function PM:ItemMenuRegister(self)
                 )
             elseif level == 2 then
                 if value and value == "BagFilter" then
-                    for i, bag in ipairs(PM.FilterList.Bags) do
+                    for i, bag in ipairs(self.FilterList.Bags) do
                         dewdrop:AddLine(
                             'text', bag,
-                            'func', function() PM.db.BagFilter[i] = not PM.db.BagFilter[i] PM:SearchBags() end,
-                            'checked', PM.db.BagFilter[i],
+                            'func', function() self.db.BagFilter[i] = not self.db.BagFilter[i] self:SearchBags() end,
+                            'checked', self.db.BagFilter[i],
                             'textHeight', 12,
                             'textWidth', 12
                         )
@@ -225,9 +230,12 @@ function PM:ItemMenuRegister(self)
         end,
         'dontHook', true
     )
+    dewdrop:Open(button)
 end
 
 ------------------ScrollFrameTooltips---------------------------
+function PM:DeScrollFrameCreate()
+
 local function ItemTemplate_OnEnter(self)
     if not self.link then return end
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT", -13, -50)
@@ -244,26 +252,31 @@ end
 local ROW_HEIGHT = 16   -- How tall is each row?
 local MAX_ROWS = 25      -- How many rows can be shown at once?
 
-local scrollFrame = CreateFrame("Frame", "ProfessionMenu_DE_ScrollFrame", ProfessionMenuExtractFrame)
-    scrollFrame:EnableMouse(true)
-    scrollFrame:SetSize(mainframe:GetWidth()-40, ROW_HEIGHT * MAX_ROWS + 16)
-    scrollFrame:SetPoint("TOP",0,-42)
-    scrollFrame:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 16,
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 },
-    })
 
-function ProfessionMenu_InventroyScrollFrameUpdate()
+    self.DeScrollFrame = CreateFrame("Frame", "", self.Extractframe)
+    local scrollFrame = self.DeScrollFrame
+        scrollFrame:EnableMouse(true)
+        scrollFrame:SetSize(self.Extractframe:GetWidth()-40, ROW_HEIGHT * MAX_ROWS + 16)
+        scrollFrame:SetPoint("TOP",0,-42)
+        scrollFrame:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 16,
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
+            insets = { left = 4, right = 4, top = 4, bottom = 4 },
+        })
+
+
+
+function PM:InventroyScrollFrameUpdate()
     local maxValue = #inventoryItems
 	FauxScrollFrame_Update(scrollFrame.scrollBar, maxValue, MAX_ROWS, ROW_HEIGHT)
 	local offset = FauxScrollFrame_GetOffset(scrollFrame.scrollBar)
 	for i = 1, MAX_ROWS do
 		local value = i + offset
         scrollFrame.rows[i]:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+        scrollFrame.rows[i]:Hide()
 		if value <= maxValue then
 			local row = scrollFrame.rows[i]
-            local text1, text2 = GetPosibleMats(inventoryItems[value][4], inventoryItems[value][5])
+            local text1, text2 = self:GetPosibleMats(inventoryItems[value][4], inventoryItems[value][5])
             row.Text:SetText(inventoryItems[value][3])
             row.Text1:SetText(text1)
             if text2 then
@@ -280,18 +293,16 @@ function ProfessionMenu_InventroyScrollFrameUpdate()
             row:SetAttribute("target-slot", row.slot)
             row.tNumber = value
             row:Show()
-		else
-			scrollFrame.rows[i]:Hide()
 		end
 	end
 end
 
-local scrollSlider = CreateFrame("ScrollFrame","ProfessionMenuDEListFrameScroll",ProfessionMenu_DE_ScrollFrame,"FauxScrollFrameTemplate")
+local scrollSlider = CreateFrame("ScrollFrame","ProfessionMenuDEListFrameScroll",self.DeScrollFrame,"FauxScrollFrameTemplate")
 scrollSlider:SetPoint("TOPLEFT", 0, -8)
 scrollSlider:SetPoint("BOTTOMRIGHT", -30, 8)
 scrollSlider:SetScript("OnVerticalScroll", function(self, offset)
     self.offset = math.floor(offset / ROW_HEIGHT + 0.5)
-    ProfessionMenu_InventroyScrollFrameUpdate()
+    PM:InventroyScrollFrameUpdate()
 end)
 
 scrollFrame.scrollBar = scrollSlider
@@ -312,6 +323,11 @@ local rows = setmetatable({}, { __index = function(t, i)
     row.Text2:SetSize(180, ROW_HEIGHT)
     row.Text2:SetPoint("LEFT",row,390,0)
     row.Text2:SetJustifyH("LEFT")
+    row:SetScript("OnShow", function(self)
+        if GameTooltip:GetOwner() == self:GetName() then
+            ItemTemplate_OnEnter(self)
+        end
+    end)
     row:SetScript("OnEnter", function(self)
         ItemTemplate_OnEnter(self)
     end)
@@ -328,17 +344,14 @@ end })
 scrollFrame.rows = rows
 
 --Shows a menu with options and sharing options
-local extractMenu = CreateFrame("Button", "ProfessionMenu_ExtractInterface_FilterMenu", ProfessionMenu_DE_ScrollFrame, "FilterDropDownMenuTemplate")
+local extractMenu = CreateFrame("Button", "ProfessionMenu_ExtractInterface_FilterMenu", self.DeScrollFrame, "FilterDropDownMenuTemplate")
     extractMenu:SetSize(133, 30)
-    extractMenu:SetPoint("BOTTOMRIGHT", ProfessionMenu_DE_ScrollFrame, "BOTTOMRIGHT", 0, -35)
+    extractMenu:SetPoint("BOTTOMRIGHT", self.DeScrollFrame, "BOTTOMRIGHT", 0, -35)
     extractMenu:RegisterForClicks("LeftButtonDown")
-    extractMenu:SetScript("OnClick", function(self)
-        if dewdrop:IsOpen() then
-            dewdrop:Close()
-        else
-            PM:ItemMenuRegister(self)
-            dewdrop:Open(self)
-        end
+    extractMenu:SetScript("OnClick", function(button)
+        self:ItemMenuRegister(button)
     end)
 
+end
 
+PM:DeScrollFrameCreate()

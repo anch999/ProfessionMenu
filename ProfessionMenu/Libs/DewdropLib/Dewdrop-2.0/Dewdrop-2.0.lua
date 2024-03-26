@@ -11,7 +11,7 @@ License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "Dewdrop-2.0"
-local MINOR_VERSION = tonumber(strmatch("$Revision: 327 $", "%d+")) + 90000
+local MINOR_VERSION = tonumber(strmatch("$Revision: 328 $", "%d+")) + 90000
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
@@ -247,6 +247,7 @@ secureFrame:HookScript("OnClick",
 	function(this , buttonClick)
 		local realthis = this
 		this = this.owner
+		if not this then return end
 		this:GetScript("OnClick")(this, buttonClick)
 	end
 )
