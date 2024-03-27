@@ -1,6 +1,6 @@
 ## Interface: 30300
 ## Title: ProfessionMenu
-## Notes: Profession Menu For Ascension
+## Notes: Adds a movable button to the UI that when clicked opens a dropdown with all of your professions, and any Ascension specific profession utilities you may own. 
 ## Author: Anch
 ## SavedVariables: ProfessionMenu
 ## SavedVariablesPerCharacter: ProfessionMenuDB

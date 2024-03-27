@@ -1,2 +1,7 @@
-
-ProfessionMenu/.vscode/settings.json
+.env
+.DS_Store
+.release
+.install
+.lua/*
+.vscode
+.idea
