@@ -231,6 +231,7 @@ function PM:OnEnable()
         self:RegisterEvent("TRADE_SKILL_SHOW")
     end
 
+    ProfessionMenuFrame:SetScale(self.db.buttonScale or 1)
     --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
 	tinsert(UISpecialFrames, self.Extractframe)
 end
