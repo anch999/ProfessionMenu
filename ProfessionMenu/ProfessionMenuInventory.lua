@@ -32,6 +32,7 @@ PM.FilterList = {
     [2] = {"Rare", 3},
     [3] = {"Epic", 4},
     Soulbound = "Soulbound",
+    Gold = "Gold",
     Bags = {
         "Backpack",
         "Bag 1",
@@ -132,9 +133,9 @@ function PM:BAG_UPDATE()
     self:ScheduleTimer(function() self:SearchBags() end, .10)
 end
 
-function PM:FilterCheck(quality, bagID, slotID)
+function PM:FilterCheck(quality, bagID, slotID, link)
     for _, _ in ipairs(self.FilterList) do
-        if (self.db.FilterList[4] and self:IsSoulbound(bagID, slotID)) or (quality < 1 or quality > 5) or self.db.FilterList[quality-1] then
+        if (self.db.FilterList[4] and self:IsSoulbound(bagID, slotID)) or (self.db.FilterList[5] and select(11, GetItemInfo(link)) > self.db.Gold ) or (quality < 1 or quality > 5) or self.db.FilterList[quality-1] then
             return true
         end
     end
@@ -154,7 +155,7 @@ function PM:SearchBags()
                     local itemID = GetContainerItemID(bagID,slotID)
                     if link and not self.db.ItemBlacklist[itemID] then
                         local itemLevel, _, itemType = select(4,GetItemInfo(itemID))
-                        if not self:FilterCheck(quality, bagID, slotID) and InventoryTypes[itemType] then
+                        if not self:FilterCheck(quality, bagID, slotID, link) and InventoryTypes[itemType] then
                             tinsert(inventoryItems,{bagID,slotID,link,quality,itemLevel})
                         end
                     end
@@ -193,6 +194,13 @@ function PM:ItemMenuRegister(button)
                     'text', self.FilterList.Soulbound,
                     'func', function() self.db.FilterList[4] = not self.db.FilterList[4] self:SearchBags() end,
                     'checked', self.db.FilterList[4],
+                    'textHeight', 12,
+                    'textWidth', 12
+                )
+                dewdrop:AddLine(
+                    'text', self.FilterList.Gold,
+                    'func', function() self.db.FilterList[5] = not self.db.FilterList[5] self:SearchBags() end,
+                    'checked', self.db.FilterList[5],
                     'textHeight', 12,
                     'textWidth', 12
                 )

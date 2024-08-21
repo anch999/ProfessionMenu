@@ -1,5 +1,5 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
-
+local WHITE = "|cffFFFFFF"
 --Round number
 local function round(num, idp)
 	local mult = 10 ^ (idp or 0)
@@ -56,12 +56,10 @@ function PM:CreateOptionsUI()
 	self.options.hideHover.Lable:SetText("Only Show Standalone Button on Hover")
 	self.options.hideHover:SetScript("OnClick", function()
 		if self.db.ShowMenuOnHover then
-			ProfessionMenuFrame_Menu:Show()
             ProfessionMenuFrame.icon:Show()
 			ProfessionMenuFrame.Text:Show()
 			self.db.ShowMenuOnHover = false
 		else
-			ProfessionMenuFrame_Menu:Hide()
             ProfessionMenuFrame.icon:Hide()
 			ProfessionMenuFrame.Text:Hide()
 			self.db.ShowMenuOnHover = true
@@ -117,8 +115,16 @@ function PM:CreateOptionsUI()
 	self.options.showHerb.Lable:SetText("Show Herbalism")
 	self.options.showHerb:SetScript("OnClick", function() self.db.showHerb = not self.db.showHerb end)
 
+	self.options.selfCast = CreateFrame("CheckButton", "ProfessionMenuOptions_SelfCast", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
+	self.options.selfCast:SetPoint("TOPLEFT", 15, -335)
+	self.options.selfCast.Lable = self.options.selfCast:CreateFontString(nil , "BORDER", "GameFontNormal")
+	self.options.selfCast.Lable:SetJustifyH("LEFT")
+	self.options.selfCast.Lable:SetPoint("LEFT", 30, 0)
+	self.options.selfCast.Lable:SetText("Cast placeable items/spells on self")
+	self.options.selfCast:SetScript("OnClick", function() self.db.selfCast = not self.db.selfCast end)
+
 	self.options.showOldTradeUI = CreateFrame("CheckButton", "ProfessionMenuOptions_ShowOldTradeSkillUI", ProfessionMenuOptionsFrame, "UICheckButtonTemplate")
-	self.options.showOldTradeUI:SetPoint("TOPLEFT", 15, -335)
+	self.options.showOldTradeUI:SetPoint("TOPLEFT", 15, -370)
 	self.options.showOldTradeUI.Lable = self.options.showOldTradeUI:CreateFontString(nil , "BORDER", "GameFontNormal")
 	self.options.showOldTradeUI.Lable:SetJustifyH("LEFT")
 	self.options.showOldTradeUI.Lable:SetPoint("LEFT", 30, 0)
@@ -135,7 +141,7 @@ function PM:CreateOptionsUI()
 	end)
 
 	self.options.txtSize = CreateFrame("Button", "ProfessionMenuOptions_TxtSizeMenu", ProfessionMenuOptionsFrame, "UIDropDownMenuTemplate")
-	self.options.txtSize:SetPoint("TOPLEFT", 15, -370)
+	self.options.txtSize:SetPoint("TOPLEFT", 10, -405)
 	self.options.txtSize.Lable = self.options.txtSize:CreateFontString(nil , "BORDER", "GameFontNormal")
 	self.options.txtSize.Lable:SetJustifyH("LEFT")
 	self.options.txtSize.Lable:SetPoint("LEFT", self.options.txtSize, 190, 0)
@@ -157,6 +163,18 @@ function PM:CreateOptionsUI()
         	ProfessionMenuFrame:SetScale(self.db.buttonScale)
 		end
     end)
+
+	self.options.discordLink = CreateFrame("Button", "ProfessionMenuOptions_DiscordLink", ProfessionMenuOptionsFrame)
+	self.options.discordLink:SetPoint("TOPLEFT", 15, -455)
+	self.options.discordLink.Lable = self.options.discordLink:CreateFontString(nil , "BORDER", "GameFontNormal")
+	self.options.discordLink.Lable:SetJustifyH("LEFT")
+	self.options.discordLink.Lable:SetPoint("LEFT", self.options.discordLink, 0, 0)
+	self.options.discordLink.Lable:SetText("For Help or suggestions come join us on Discord\nhttps://discord.gg/j7eebTK5Q3"..WHITE.." (Click to copy link)")
+	self.options.discordLink:SetScript("OnClick", function()
+		Internal_CopyToClipboard("https://discord.gg/j7eebTK5Q3")
+		DEFAULT_CHAT_FRAME:AddMessage("Discord link copyed to clipboard")
+	end)
+	self.options.discordLink:SetSize(self.options.discordLink.Lable:GetStringWidth(), self.options.discordLink.Lable:GetStringHeight())
 end
 
 PM:CreateOptionsUI()
@@ -182,3 +200,4 @@ PM:CreateOptionsUI()
 		UIDropDownMenu_SetSelectedID(ProfessionMenuOptions_TxtSizeMenu)
 		UIDropDownMenu_SetWidth(ProfessionMenuOptions_TxtSizeMenu, 150)
 	end
+	

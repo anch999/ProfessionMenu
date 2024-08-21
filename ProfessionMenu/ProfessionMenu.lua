@@ -1,7 +1,6 @@
 local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0")
 PROFESSIONMENU = PM
-local professionbutton, mainframe
-local dewdrop = AceLibrary("Dewdrop-2.0")
+local dewdrop = LibStub("Dewdrop-2.0")
 local defIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
 local icon = LibStub('LibDBIcon-1.0')
 local CYAN =  "|cff00ffff"
@@ -15,48 +14,52 @@ local minimap = LibStub:GetLibrary('LibDataBroker-1.1'):NewDataObject("Professio
 
 --Set Savedvariables defaults
 local DefaultSettings  = {
-    { TableName = "ShowMenuOnHover", false, Frame = "ProfessionMenuFrame",CheckBox = "ProfessionMenuOptions_ShowOnHover" },
-    { TableName = "HideMenu", false, Frame = "ProfessionMenuFrame", CheckBox = "ProfessionMenuOptions_HideMenu"},
-    { TableName = "DeleteItem", false, CheckBox = "ProfessionMenuOptions_DeleteMenu"},
-    { TableName = "minimap", false, CheckBox = "ProfessionMenuOptions_HideMinimap"},
-    { TableName = "txtSize", 12},
-    { TableName = "autoMenu", false, CheckBox = "ProfessionMenuOptions_AutoMenu"},
-    { TableName = "FilterList", {false,false,false,false} },
-    { TableName = "BagFilter", {false,false,false,false,false} },
-    { TableName = "ItemBlacklist", { [9149] = true }},
-    { TableName = "hideMaxRank", false, CheckBox = "ProfessionMenuOptions_HideMaxRank"},
-    { TableName = "hideRank", false, CheckBox = "ProfessionMenuOptions_HideRank"},
-    { TableName = "showHerb", false, CheckBox = "ProfessionMenuOptions_ShowHerb"},
-    { TableName = "ShowOldTradeSkillUI", false, CheckBox = "ProfessionMenuOptions_ShowOldTradeSkillUI"}
+    ShowMenuOnHover = { false, ShowFrame = "ProfessionMenuFrame", CheckBox = "ProfessionMenuOptions_ShowOnHover" },
+    HideMenu = { false, HideFrame = "ProfessionMenuFrame", CheckBox = "ProfessionMenuOptions_HideMenu"},
+    DeleteItem = { false, CheckBox = "ProfessionMenuOptions_DeleteMenu"},
+    minimap = { false, CheckBox = "ProfessionMenuOptions_HideMinimap"},
+    txtSize = { 12 },
+    autoMenu = { false, CheckBox = "ProfessionMenuOptions_AutoMenu"},
+    FilterList = { {false,false,false,false,false} },
+    BagFilter = { {false,false,false,false,false} },
+    ItemBlacklist = { { [9149] = true }},
+    hideMaxRank = { false, CheckBox = "ProfessionMenuOptions_HideMaxRank"},
+    hideRank = { false, CheckBox = "ProfessionMenuOptions_HideRank"},
+    showHerb = { false, CheckBox = "ProfessionMenuOptions_ShowHerb"},
+    ShowOldTradeSkillUI = { false, CheckBox = "ProfessionMenuOptions_ShowOldTradeSkillUI"},
+    selfCast = { false }
 }
 
 --[[ TableName = Name of the saved setting
 CheckBox = Global name of the checkbox if it has one and first numbered table entry is the boolean
 Text = Global name of where the text and first numbered table entry is the default text 
 Frame = Frame or button etc you want hidden/shown at start based on condition ]]
-local function setupSettings(db)
-    for _,v in ipairs(DefaultSettings) do
-        if db[v.TableName] == nil then
-            if #v > 1 then
-                db[v.TableName] = {}
-                for _, n in ipairs(v) do
-                    tinsert(db[v.TableName], n)
-                end
+local function setupSettings(db, defaultList)
+    db = db or {}
+    for table, v in pairs(defaultList) do
+        if not db[table] and db[table] ~= false then
+            if type(v) == "table" then
+                db[table] = v[1]
             else
-                db[v.TableName] = v[1]
+                db[table] = v
             end
         end
-
-        if v.CheckBox then
-            _G[v.CheckBox]:SetChecked(db[v.TableName])
-        end
-        if v.Text then
-            _G[v.Text]:SetText(db[v.TableName])
-        end
-        if v.Frame then
-            if db[v.TableName] then _G[v.Frame]:Hide() else _G[v.Frame]:Show() end
+        if type(v) == "table" then
+            if v.CheckBox and _G[v.CheckBox] then
+                _G[v.CheckBox]:SetChecked(db[table])
+            end
+            if v.Text and _G[v.Text] then
+                _G[v.Text]:SetText(db[table])
+            end
+            if v.ShowFrame and _G[v.Frame] then
+                if db[table] then _G[v.Frame]:Show() else _G[v.Frame]:Hide() end
+            end
+            if v.HideFrame and _G[v.HideFrame] then
+                if db[table] then _G[v.HideFrame]:Hide() else _G[v.HideFrame]:Show() end
+            end
         end
     end
+    return db
 end
 
 local profCooldowns = {
@@ -205,6 +208,7 @@ local profSubList = {
     31252,
     818,
     1804,
+    1501804,
     8200016,
 }
 
@@ -215,15 +219,12 @@ function PM:OnEnable()
     end
 
     if self.db.menuPos then
-        local pos = self.db.menuPos
-        mainframe:ClearAllPoints()
-        mainframe:SetPoint(pos[1], pos[2], pos[3], pos[4], pos[5])
+        self.standaloneButton:ClearAllPoints()
+        self.standaloneButton:SetPoint(unpack(self.db.menuPos))
     else
-        mainframe:ClearAllPoints()
-        mainframe:SetPoint("CENTER", UIParent)
+        self.standaloneButton:ClearAllPoints()
+        self.standaloneButton:SetPoint("CENTER", UIParent)
     end
-
-    self:ToggleMainButton("hide")
 
     --self:RegisterEvent("ADDON_LOADED")
     if self.db.ShowOldTradeSkillUI then
@@ -233,13 +234,11 @@ function PM:OnEnable()
 
     ProfessionMenuFrame:SetScale(self.db.buttonScale or 1)
     --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
-	tinsert(UISpecialFrames, self.Extractframe)
+	tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
 end
 
 function PM:OnInitialize()
-    if not ProfessionMenuDB then ProfessionMenuDB = {} end
-    self.db = ProfessionMenuDB
-    setupSettings(self.db)
+     self.db = setupSettings(ProfessionMenuDB, DefaultSettings)
     --Enable the use of /PM or /PROFESSIONMENU to open the loot browser
     SLASH_PROFESSIONMENU1 = "/PROFESSIONMENU"
     SLASH_PROFESSIONMENU2 = "/PM"
@@ -336,10 +335,11 @@ function PM:AddItem(itemID)
 		if cooldown > 0 then
 		text = name.." |cFF00FFFF("..cooldown.." ".. "mins" .. ")"
 		end
-		local secure = {
-		type1 = 'item',
-		item = name
-		}
+        local selfCast = self.db.selfCast and "[@player] " or ""
+        local secure = {
+          type1 = "macro",
+          macrotext = "/use "..selfCast..name,
+        }
         dewdrop:AddLine(
                 'text', text,
                 'icon', icon,
@@ -394,10 +394,11 @@ function PM:AddProfessions()
                 if not self.db.hideMaxRank and not self.db.hideRank then
                     name = name .. " |cFF00FFFF("..rank.."/"..maxRank..")"
                 end
+                local selfCast = self.db.selfCast and "[@player] " or ""
                 local secure = {
-                    type1 = 'spell',
-                    spell = spellID
-                    }
+                  type1 = "macro",
+                  macrotext = "/cast "..selfCast..name,
+                }
                 local openFrame, tooltipTitle, tooltipText
                 if prof.frame then
                     openFrame = true
@@ -425,7 +426,10 @@ end
 function PM:DewdropRegister(button, showUnlock, resetPoint)
     if dewdrop:IsOpen(button) then dewdrop:Close() return end
     dewdrop:Register(button,
-        'point', function(parent) if resetPoint then return nil, nil else return "TOP", "BOTTOM" end end,
+        'point', function(parent)
+            local point1, _, point2 = self:GetTipAnchor(button)
+            return point1, point2
+          end,
         'children', function(level, value)
             dewdrop:AddLine(
                 'text', "|cffffff00Professions",
@@ -449,7 +453,11 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
             if CA_IsSpellKnown(750750) then
                 if not divider then divider = self:AddDividerLine(35) end
                 local name, _, icon = GetSpellInfo(750750)
-                local secure = { type1 = 'spell', spell = name }
+                local selfCast = self.db.selfCast and "[@player] " or ""
+                local secure = {
+                  type1 = "macro",
+                  macrotext = "/cast "..selfCast..name,
+                }
                 dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)
             end
 
@@ -458,7 +466,11 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
                 self:AddDividerLine(35)
                 for _, spellID in ipairs(spellIDs) do
                     local name, _, icon = GetSpellInfo(spellID)
-                    local secure = { type1 = 'spell', spell = spellID }
+                    local selfCast = self.db.selfCast and "[@player] " or ""
+                    local secure = {
+                      type1 = "macro",
+                      macrotext = "/cast "..selfCast..name,
+                    }
                     dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)    
                 end
             end
@@ -508,93 +520,96 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
     GameTooltip:Hide()
 end
 
-function PM:ToggleMainButton(toggle)
+function PM:ToggleMainButton(hide)
     if self.db.ShowMenuOnHover then
-        if toggle == "show" then
-            ProfessionMenuFrame_Menu:Show()
-            ProfessionMenuFrame.icon:Show()
-            ProfessionMenuFrame.Text:Show()
+        if hide then
+            self.standaloneButton.icon:Hide()
+            self.standaloneButton.Text:Hide()
         else
-            ProfessionMenuFrame_Menu:Hide()
-            ProfessionMenuFrame.icon:Hide()
-            ProfessionMenuFrame.Text:Hide()
+            self.standaloneButton.icon:Show()
+            self.standaloneButton.Text:Show()
         end
     end
 end
 
 -- Used to show highlight as a frame mover
-local unlocked = false
 function PM:UnlockFrame()
-    if unlocked then
-        ProfessionMenuFrame_Menu:Show()
-        ProfessionMenuFrame.Highlight:Hide()
-        unlocked = false
+    self = PM
+    if self.standaloneButton.unlocked then
+        self.standaloneButton:SetMovable(false)
+        self.standaloneButton:RegisterForDrag()
+        self.standaloneButton.Highlight:Hide()
+        self.standaloneButton.unlocked = false
         GameTooltip:Hide()
     else
-        ProfessionMenuFrame_Menu:Hide()
-        ProfessionMenuFrame.Highlight:Show()
-        unlocked = true
+        self.standaloneButton:SetMovable(true)
+        self.standaloneButton:RegisterForDrag("LeftButton")
+        self.standaloneButton.Highlight:Show()
+        self.standaloneButton.unlocked = true
     end
 end
 
 function PM:CreateUI()
 --Creates the main interface
-	mainframe = CreateFrame("Button", "ProfessionMenuFrame", UIParent, nil)
-    mainframe:SetSize(70,70)
-    mainframe:EnableMouse(true)
-    
-    mainframe:RegisterForDrag("LeftButton")
-    mainframe:SetScript("OnDragStart", function() mainframe:StartMoving() end)
-    mainframe:SetScript("OnDragStop", function()
-        mainframe:StopMovingOrSizing()
-        self.db.menuPos = {mainframe:GetPoint()}
+	self.standaloneButton = CreateFrame("Button", "ProfessionMenuFrame", UIParent, nil)
+    self.standaloneButton:SetSize(70,70)
+    self.standaloneButton:EnableMouse(true)
+    self.standaloneButton:SetScript("OnDragStart", function() self.standaloneButton:StartMoving() end)
+    self.standaloneButton:SetScript("OnDragStop", function()
+        self.standaloneButton:StopMovingOrSizing()
+        self.db.menuPos = {self.standaloneButton:GetPoint()}
         self.db.menuPos[2] = "UIParent"
     end)
-    mainframe:SetMovable(true)
-    mainframe:RegisterForClicks("RightButtonDown")
-    mainframe:SetScript("OnClick", function() if unlocked then self:UnlockFrame() end end)
-    mainframe.icon = mainframe:CreateTexture(nil, "ARTWORK")
-    mainframe.icon:SetSize(55,55)
-    mainframe.icon:SetPoint("CENTER", mainframe,"CENTER",0,0)
-    mainframe.icon:SetTexture(defIcon)
-    mainframe.Text = mainframe:CreateFontString()
-    mainframe.Text:SetFont("Fonts\\FRIZQT__.TTF", 13)
-    mainframe.Text:SetFontObject(GameFontNormal)
-    mainframe.Text:SetText("|cffffffffProf\nMenu")
-    mainframe.Text:SetPoint("CENTER", mainframe.icon, "CENTER", 0, 0)
-    mainframe.Highlight = mainframe:CreateTexture(nil, "OVERLAY")
-    mainframe.Highlight:SetSize(70,70)
-    mainframe.Highlight:SetPoint("CENTER", mainframe, 0, 0)
-    mainframe.Highlight:SetTexture("Interface\\AddOns\\AwAddons\\Textures\\EnchOverhaul\\Slot2Selected")
-    mainframe.Highlight:Hide()
-    mainframe:Hide()
-    mainframe:SetScript("OnEnter", function(button)
-        if unlocked then
+    self.standaloneButton:SetScript("OnShow", function()
+        self.standaloneButton.icon:Show()
+        self.standaloneButton.Text:Show()
+    end)
+    self.standaloneButton:SetScript("OnHide", function()
+        self.standaloneButton.icon:Hide()
+        self.standaloneButton.Text:Hide()
+    end)
+    self.standaloneButton:SetMovable(true)
+    self.standaloneButton:RegisterForClicks("LeftButtonDown", "RightButtonDown")
+    self.standaloneButton.icon = self.standaloneButton:CreateTexture(nil, "ARTWORK")
+    self.standaloneButton.icon:SetSize(55,55)
+    self.standaloneButton.icon:SetPoint("CENTER", self.standaloneButton,"CENTER",0,0)
+    self.standaloneButton.icon:SetTexture(defIcon)
+    self.standaloneButton.Text = self.standaloneButton:CreateFontString()
+    self.standaloneButton.Text:SetFont("Fonts\\FRIZQT__.TTF", 13)
+    self.standaloneButton.Text:SetFontObject(GameFontNormal)
+    self.standaloneButton.Text:SetText("|cffffffffProf\nMenu")
+    self.standaloneButton.Text:SetPoint("CENTER", self.standaloneButton.icon, "CENTER", 0, 0)
+    self.standaloneButton.Highlight = self.standaloneButton:CreateTexture(nil, "OVERLAY")
+    self.standaloneButton.Highlight:SetSize(70,70)
+    self.standaloneButton.Highlight:SetPoint("CENTER", self.standaloneButton, 0, 0)
+    self.standaloneButton.Highlight:SetTexture("Interface\\AddOns\\AwAddons\\Textures\\EnchOverhaul\\Slot2Selected")
+    self.standaloneButton.Highlight:Hide()
+    self.standaloneButton:Hide()
+    self.standaloneButton:SetScript("OnClick", function(button, btnclick)
+        if btnclick == "RightButton" and  self.standaloneButton.unlocked then
+            self:UnlockFrame()
+        elseif not self.standaloneButton.unlocked then
+            if not self.db.autoMenu then
+                self:DewdropRegister(button, true)
+            end
+        end
+    end)
+    self.standaloneButton:SetScript("OnEnter", function(button)
+        if self.standaloneButton.unlocked then
             GameTooltip:SetOwner(button, "ANCHOR_TOP")
             GameTooltip:AddLine("Left click to drag")
             GameTooltip:AddLine("Right click to lock frame")
             GameTooltip:Show()
         else
-            self:ToggleMainButton("show")
+            self:OnEnter(button, true)
+            self:ToggleMainButton()
+            self.standaloneButton.Highlight:Show()
         end
     end)
-    mainframe:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-	professionbutton = CreateFrame("Button", "ProfessionMenuFrame_Menu", ProfessionMenuFrame)
-    professionbutton:SetSize(70,70)
-    professionbutton:SetPoint("BOTTOM", ProfessionMenuFrame, "BOTTOM", 0, 2)
-    professionbutton:RegisterForClicks("LeftButtonDown", "RightButtonDown")
-    professionbutton:Show()
-    professionbutton:SetScript("OnClick", function(button, btnclick) if not self.db.autoMenu then self:DewdropRegister(button, true) end end)
-    professionbutton:SetScript("OnEnter", function(button)
-        self:OnEnter(button, true)
-        mainframe.Highlight:Show()
-        self:ToggleMainButton("show")
-    end)
-    professionbutton:SetScript("OnLeave", function()
-        mainframe.Highlight:Hide()
+    self.standaloneButton:SetScript("OnLeave", function()
+        self.standaloneButton.Highlight:Hide()
         GameTooltip:Hide()
-        self:ToggleMainButton("hide")
+        self:ToggleMainButton(true)
     end)
 end
 PM:CreateUI()
@@ -607,10 +622,10 @@ end)
 
 -- toggle the main button frame
 function PM:ToggleMainFrame()
-    if ProfessionMenuFrame:IsVisible() then
-        ProfessionMenuFrame:Hide()
+    if  self.standaloneButton:IsVisible() then
+        self.standaloneButton:Hide()
     else
-        ProfessionMenuFrame:Show()
+        self.standaloneButton:Show()
     end
 end
 
@@ -622,6 +637,8 @@ If someone types /mysticextended, bring up the options box
 function PM:SlashCommand(msg)
     if msg == "reset" then
         ProfessionMenuDB = nil
+        self.standaloneButton:ClearAllPoints()
+        self.standaloneButton:SetPoint("CENTER", UIParent)
         PM:OnInitialize()
         DEFAULT_CHAT_FRAME:AddMessage("Settings Reset")
     elseif msg == "options" then
@@ -640,14 +657,6 @@ function PM:TRADE_SKILL_SHOW()
 	end
 end
 
-local function GetTipAnchor(frame)
-    local x, y = frame:GetCenter()
-    if not x or not y then return 'TOPLEFT', 'BOTTOMLEFT' end
-    local hhalf = (x > UIParent:GetWidth() * 2 / 3) and 'RIGHT' or (x < UIParent:GetWidth() / 3) and 'LEFT' or ''
-    local vhalf = (y > UIParent:GetHeight() / 2) and 'TOP' or 'BOTTOM'
-    return vhalf .. hhalf, frame, (vhalf == 'TOP' and 'BOTTOM' or 'TOP') .. hhalf
-end
-
 function minimap.OnClick(self, button)
     GameTooltip:Hide()
     if not PM.db.autoMenu then
@@ -664,7 +673,7 @@ function PM:OnEnter(button, show)
         self:DewdropRegister(button, show)
     else
         GameTooltip:SetOwner(button, 'ANCHOR_NONE')
-        GameTooltip:SetPoint(GetTipAnchor(button))
+        GameTooltip:SetPoint(self:GetTipAnchor(button))
         GameTooltip:ClearLines()
         GameTooltip:AddLine("ProfessionMenu")
         GameTooltip:Show()
