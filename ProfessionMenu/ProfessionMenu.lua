@@ -1,16 +1,8 @@
 local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0")
 PROFESSIONMENU = PM
-local dewdrop = LibStub("Dewdrop-2.0")
-local defIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
-local icon = LibStub('LibDBIcon-1.0')
+PM.dewdrop = LibStub("Dewdrop-2.0")
 local CYAN =  "|cff00ffff"
 local WHITE = "|cffFFFFFF"
-
-local minimap = LibStub:GetLibrary('LibDataBroker-1.1'):NewDataObject("ProfessionMenu", {
-    type = 'data source',
-    text = "ProfessionMenu",
-    icon = defIcon,
-  })
 
 --Set Savedvariables defaults
 local DefaultSettings  = {
@@ -27,7 +19,8 @@ local DefaultSettings  = {
     hideRank = { false, CheckBox = "ProfessionMenuOptions_HideRank"},
     showHerb = { false, CheckBox = "ProfessionMenuOptions_ShowHerb"},
     ShowOldTradeSkillUI = { false, CheckBox = "ProfessionMenuOptions_ShowOldTradeSkillUI"},
-    selfCast = { false }
+    selfCast = { false, CheckBox = "ProfessionMenuOptions_SelfCast" },
+    Gold = { 55000 }
 }
 
 --[[ TableName = Name of the saved setting
@@ -62,161 +55,9 @@ local function setupSettings(db, defaultList)
     return db
 end
 
-local profCooldowns = {
-    ["Enchanting"] = {
-        28027, -- Prismatic Sphere 
-        28028, -- Void Sphere 
-        979343, -- Transmute: Forbidding Dread Dust 
-        979341, -- Transmute: Forbidding Nether Shard 
-        979342, -- Transmute: Forbidding Twisted Dust 
-        979344, -- Transmute: Forbidding Void Dust 
-    },
-    ["Alchemy"] = {
-        29688, -- Transmute: Primal Might 
-        32765, -- Transmute: Earthstorm Diamond 
-        32766, -- Transmute: Skyfire Diamond 
-        28566, -- Transmute: Primal Air to Fire 
-        28567, -- Transmute: Primal Earth to Water 
-        28568, -- Transmute: Primal Fire to Earth 
-        28569, -- Transmute: Primal Water to Air 
-    },
-    ["Jewelcrafting"] = {
-        47280, -- Brilliant Glass 
-        979840, -- Transmute: Pure Void Metal 
-        979838, -- Transmute: Pure Twisted Metal 
-        979837, -- Transmute: Pure Nether Metal 
-        979839, -- Transmute: Pure Dread Metal 
-    },
-    ["Leatherworking"] = {
-        979331, -- Transmute: Full Grain Dread Leather 
-        979329, -- Transmute: Full Grain Nether Leather 
-        979330, -- Transmute: Full Grain Twisted Leather 
-        979332, -- Transmute: Full Grain Void Leather 
-    },
-    ["Tailoring"] = {
-        26751, -- Primal Mooncloth 
-        36686, -- Shadowcloth 
-        31373, -- Spellcloth 
-        979327, -- Transmute: Reinforced Dread Thread 
-        979325, -- Transmute: Reinforced Nether Thread 
-        979326, -- Transmute: Reinforced Void Thread 
-        979328, -- Transmute: Reinforced Twisted Thread 
-    },
-    ["Engineering"] = {
-        979835, -- Transmute: Pure Dread Metal 
-        979833, -- Transmute: Pure Nether Metal 
-        979836, -- Transmute: Pure Void Metal 
-        979834, -- Transmute: Pure Twisted Metal 
-    },
-    ["Mining"] = {
-        979337, -- Transmute: Pure Nether Metal 
-    },
-}
-
-local profList = {
-    {
-        51304, -- Grand Master 450
-        28596, -- Master 375
-        11611, -- Artisan 300
-        3464, -- Expert 225
-        3101, -- Journeyman 150
-        2259, -- Apprentice 75
-    }, --ALCHEMY
-    {
-        51300, -- Grand Master 450
-        29844, -- Master 375
-        9785, -- Artisan 300
-        3538, -- Expert 225
-        3100, -- Journeyman 150
-        2018, -- Apprentice 75
-    }, --BLACKSMITHING
-    {
-        51313, -- Grand Master 450
-        28029, -- Mater 375
-        13920, -- Artisan 300
-        7413, -- Expert 225
-        7412, -- Journeyman 150
-        7411, -- Apprentice 75
-        frame = {_G["PROFESSIONMENU"]["Extractframe"], "Enchanting", "Right click to open disenchanting frame"}
-    }, --ENCHANTING
-    {
-        51306, -- Grand Master 450
-        30350, -- Master 375
-        12656, -- Artisan 300
-        4038, -- Expert 225
-        4037, -- Journeyman 150
-        4036, -- Apprentice 75
-    }, --ENGINEERING
-    {
-        45363, -- Grand Master 450
-        45361, -- Master 375
-        45360, -- Artisan 300
-        45359, -- Expert 225
-        45358, -- Journeyman 150
-        45357, -- Apprentice 75
-    }, --INSCRIPTION
-    {
-        51311, -- Grand Master 450
-        28897, -- Master 375
-        28895, -- Artisan 300
-        28894, -- Expert 225
-        25230, -- Journeyman 150
-        25229, -- Apprentice 75
-    }, --JEWELCRAFTING 
-    {
-        51302, -- Grand Master 450
-        32549, -- Master 375
-        10662, -- Artisan 300
-        3811, -- Expert 225
-        3104, -- Journeyman 150
-        2108, -- Apprentice 75
-    }, --LEATHERWORKING
-    {
-    2656,
-    main = 50310 -- mining spellid for rank info
-    }, --SMELTING
-    {2383, Name = "Herbalism", Show = "showHerb" }, --Herbalism
-    {
-        51309, -- Grand Master 450
-        26790, -- Master 375
-        12180, -- Artisan 300
-        3910, -- Expert 225
-        3909, -- Journeyman 150
-        3908, -- Apprentice 75
-    }, --TAILORING
-    {
-        51296, -- Grand Master 450
-        33359, -- Master 375
-        18260, -- Artisan 300
-        3413, -- Expert 225
-        3102, -- Journeyman 150
-        2550, -- Apprentice 75
-    }, --COOKING
-    {
-        45542, -- Grand Master 450
-        27028, -- Expert 375
-        10846, -- Artisan 300
-        7924, -- Expert 225
-        3274, -- Journeyman 150
-        3273, -- Apprentice 75
-    }, --FIRSTAID
-    {13977860}, --WOODCUTTING
-}
-
-local profSubList = {
-    13262,
-    31252,
-    818,
-    1804,
-    1501804,
-    8200016,
-}
-
 function PM:OnEnable()
-    if icon then
-        self.map = {hide = self.db.minimap}
-        icon:Register('ProfessionMenu', minimap, self.map)
-    end
+
+    self:InitializeMinimap()
 
     if self.db.menuPos then
         self.standaloneButton:ClearAllPoints()
@@ -233,8 +74,7 @@ function PM:OnEnable()
     end
 
     ProfessionMenuFrame:SetScale(self.db.buttonScale or 1)
-    --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
-	tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
+
 end
 
 function PM:OnInitialize()
@@ -251,81 +91,6 @@ function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
 	self:RemoveItem(arg2)
 end
 
-local cTip = CreateFrame("GameTooltip","cTooltip",nil,"GameTooltipTemplate")
-
-function PM:IsSoulbound(bag, slot)
-    cTip:SetOwner(UIParent, "ANCHOR_NONE")
-    cTip:SetBagItem(bag, slot)
-    cTip:Show()
-    for i = 1,cTip:NumLines() do
-        if(_G["cTooltipTextLeft"..i]:GetText()==ITEM_SOULBOUND) then
-            return true
-        end
-    end
-    cTip:Hide()
-    return false
-end
-
--- returns true, if player has item with given ID in inventory or bags and it's not on cooldown
-function PM:HasItem(itemID)
-	local item, found, id
-	-- scan bags
-	for bag = 0, 4 do
-		for slot = 1, GetContainerNumSlots(bag) do
-			item = GetContainerItemLink(bag, slot)
-			if item then
-				found, _, id = item:find('^|c%x+|Hitem:(%d+):.+')
-				if found and tonumber(id) == itemID then
-					return true, bag, slot
-				end
-			end
-		end
-	end
-	return false
-end
-
-local items = {
-    {1777028, "Summon Thermal Anvil"}, -- thermal anvil
-    {1904514, "Summon Sanguine Workbench"}, -- sanguine workbench vanity
-    {1904515}, -- sanguine workbench soulbound
-}
-
--- deletes item from players inventory if value 2 in the items table is set
-function PM:RemoveItem(arg2)
-	if not self.db.DeleteItem then return end
-	for _, item in ipairs(items) do
-        if arg2 == item[2] then
-            local found, bag, slot = self:HasItem(item[1])
-            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and self:IsSoulbound(bag, slot) then
-                PickupContainerItem(bag, slot)
-                DeleteCursorItem()
-            end
-        end
-	end
-	self:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-end
-
-function PM:ReturnItemIDs()
-    local list = {}
-    for _, item in ipairs(items) do
-        if self:HasItem(item[1]) or C_VanityCollection.IsCollectionItemOwned(item[1]) then
-            tinsert(list, item[1])
-        end
-    end
-    return list
-end
-
--- returns a list of known spellIDs
-function PM:ReturnSpellIDs()
-    local list = {}
-    for _, spellID in ipairs(profSubList) do
-        if CA_IsSpellKnown(spellID) then
-            tinsert(list, spellID)
-        end
-    end
-    return list
-end
-
 -- add altar summon button via dewdrop secure
 function PM:AddItem(itemID)
         local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemID)
@@ -340,27 +105,14 @@ function PM:AddItem(itemID)
           type1 = "macro",
           macrotext = "/use "..selfCast..name,
         }
-        dewdrop:AddLine(
+        self.dewdrop:AddLine(
                 'text', text,
                 'icon', icon,
                 'secure', secure,
-                'func', function() if not self:HasItem(itemID) then RequestDeliverVanityCollectionItem(itemID) else if self.db.DeleteItem then self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED") end dewdrop:Close() end end,
+                'func', function() if not self:HasItem(itemID) then RequestDeliverVanityCollectionItem(itemID) else if self.db.DeleteItem then self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED") end self.dewdrop:Close() end end,
                 'textHeight', self.db.txtSize,
                 'textWidth', self.db.txtSize
         )
-end
-
---for a adding a divider to dew drop menus 
-function PM:AddDividerLine(maxLenght)
-    local text = WHITE.."----------------------------------------------------------------------------------------------------"
-    dewdrop:AddLine(
-        'text' , text:sub(1, maxLenght),
-        'textHeight', self.db.txtSize,
-        'textWidth', self.db.txtSize,
-        'isTitle', true,
-        "notCheckable", true
-    )
-    return true
 end
 
 function PM:AddProfessions()
@@ -373,7 +125,7 @@ function PM:AddProfessions()
         end
     end
 
-     for _, prof in ipairs(profList) do
+     for _, prof in ipairs(self.profList) do
         for _, spellID in ipairs(prof) do
             if IsSpellKnown(spellID) and ((prof.Show and self.db[prof.Show]) or not prof.Show) then
                 local name, _, icon = GetSpellInfo(spellID)
@@ -397,7 +149,7 @@ function PM:AddProfessions()
                 local selfCast = self.db.selfCast and "[@player] " or ""
                 local secure = {
                   type1 = "macro",
-                  macrotext = "/cast "..selfCast..name,
+                  macrotext = "/cast "..selfCast..profName,
                 }
                 local openFrame, tooltipTitle, tooltipText
                 if prof.frame then
@@ -405,7 +157,7 @@ function PM:AddProfessions()
                     tooltipTitle = prof.frame[2]
                     tooltipText = prof.frame[3]
                 end
-                dewdrop:AddLine(
+                self.dewdrop:AddLine(
                         'text', name,
                         'icon', icon,
                         'secure', secure,
@@ -424,14 +176,14 @@ end
 
 --sets up the drop down menu for specs
 function PM:DewdropRegister(button, showUnlock, resetPoint)
-    if dewdrop:IsOpen(button) then dewdrop:Close() return end
-    dewdrop:Register(button,
+    if self.dewdrop:IsOpen(button) then self.dewdrop:Close() return end
+    self.dewdrop:Register(button,
         'point', function(parent)
             local point1, _, point2 = self:GetTipAnchor(button)
             return point1, point2
           end,
         'children', function(level, value)
-            dewdrop:AddLine(
+            self.dewdrop:AddLine(
                 'text', "|cffffff00Professions",
                 'textHeight', self.db.txtSize,
                 'textWidth', self.db.txtSize,
@@ -458,7 +210,7 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
                   type1 = "macro",
                   macrotext = "/cast "..selfCast..name,
                 }
-                dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)
+                self.dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)
             end
 
             local spellIDs = self:ReturnSpellIDs()
@@ -471,12 +223,12 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
                       type1 = "macro",
                       macrotext = "/cast "..selfCast..name,
                     }
-                    dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)    
+                    self.dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)    
                 end
             end
             self:AddDividerLine(35)
             if showUnlock then
-                dewdrop:AddLine(
+                self.dewdrop:AddLine(
                     'text', "Unlock Frame",
                     'textHeight', self.db.txtSize,
                     'textWidth', self.db.txtSize,
@@ -485,7 +237,7 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
                     'closeWhenClicked', true
                 )
             end
-            dewdrop:AddLine(
+            self.dewdrop:AddLine(
 				'text', "Options",
                 'textHeight', self.db.txtSize,
                 'textWidth', self.db.txtSize,
@@ -493,7 +245,7 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
 				'notCheckable', true,
                 'closeWhenClicked', true
 			)
-            dewdrop:AddLine(
+            self.dewdrop:AddLine(
 				'text', "Close Menu",
                 'textR', 0,
                 'textG', 1,
@@ -506,12 +258,12 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
 		end,
 		'dontHook', true
 	)
-    dewdrop:Open(button)
+    self.dewdrop:Open(button)
     local hook
     if not hook then
         WorldFrame:HookScript("OnEnter", function()
-            if dewdrop:IsOpen(button) then
-                dewdrop:Close()
+            if self.dewdrop:IsOpen(button) then
+                self.dewdrop:Close()
             end
         end)
         hook = true
@@ -639,14 +391,14 @@ function PM:SlashCommand(msg)
         ProfessionMenuDB = nil
         self.standaloneButton:ClearAllPoints()
         self.standaloneButton:SetPoint("CENTER", UIParent)
-        PM:OnInitialize()
+        self:OnInitialize()
         DEFAULT_CHAT_FRAME:AddMessage("Settings Reset")
     elseif msg == "options" then
-        PM:Options_Toggle()
+        self:Options_Toggle()
     elseif msg == "macromenu" then
-        PM:DewdropRegister(GetMouseFocus(), nil, true)
+        self:DewdropRegister(GetMouseFocus(), nil, true)
     else
-        PM:ToggleMainFrame()
+        self:ToggleMainFrame()
     end
 end
 
@@ -655,43 +407,6 @@ function PM:TRADE_SKILL_SHOW()
 	if TradeSkillFrame_Show then
 		TradeSkillFrame_Show()
 	end
-end
-
-function minimap.OnClick(self, button)
-    GameTooltip:Hide()
-    if not PM.db.autoMenu then
-        PM:DewdropRegister(self)
-    end
-end
-
-function minimap.OnLeave()
-    GameTooltip:Hide()
-end
-
-function PM:OnEnter(button, show)
-    if self.db.autoMenu and not UnitAffectingCombat("player") then
-        self:DewdropRegister(button, show)
-    else
-        GameTooltip:SetOwner(button, 'ANCHOR_NONE')
-        GameTooltip:SetPoint(self:GetTipAnchor(button))
-        GameTooltip:ClearLines()
-        GameTooltip:AddLine("ProfessionMenu")
-        GameTooltip:Show()
-    end
-end
-
-function minimap.OnEnter(button)
-    PM:OnEnter(button)
-end
-
-function PM:ToggleMinimap()
-    local hide = not self.db.minimap
-    self.db.minimap = hide
-    if hide then
-      icon:Hide('ProfessionMenu')
-    else
-      icon:Show('ProfessionMenu')
-    end
 end
 
 function PM:UpdateButtonText(i)

@@ -24,6 +24,8 @@ function PM:CreateInventoryUI()
         mainframe.TitleText:SetPoint("TOP", 0, -9)
         mainframe.TitleText:SetShadowOffset(1,-1)
         mainframe:Hide()
+        --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
+	    tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
 end
 PM:CreateInventoryUI()
 
