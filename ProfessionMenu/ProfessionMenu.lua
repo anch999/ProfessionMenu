@@ -134,9 +134,9 @@ function PM:AddProfessions()
                 end
                 local profName = name
                 if prof.main then
-                    profName = GetSpellInfo(prof.main)
+                    name = GetSpellInfo(prof.main)
                 end
-                local rank, maxRank = getProfessionRanks(profName)
+                local rank, maxRank = getProfessionRanks(name)
                 if not self.db.hideRank and self.db.hideMaxRank then
                     name = name .. " |cFF00FFFF("..rank..")"
                 end
