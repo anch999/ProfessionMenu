@@ -1,5 +1,4 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
-PM.defaultIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
 local icon = LibStub('LibDBIcon-1.0')
 
 

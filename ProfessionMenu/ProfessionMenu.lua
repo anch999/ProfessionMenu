@@ -1,5 +1,6 @@
 local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0")
 PROFESSIONMENU = PM
+PM.defaultIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
 PM.dewdrop = LibStub("Dewdrop-2.0")
 local CYAN =  "|cff00ffff"
 local WHITE = "|cffFFFFFF"
@@ -325,7 +326,7 @@ function PM:CreateUI()
     self.standaloneButton.icon = self.standaloneButton:CreateTexture(nil, "ARTWORK")
     self.standaloneButton.icon:SetSize(55,55)
     self.standaloneButton.icon:SetPoint("CENTER", self.standaloneButton,"CENTER",0,0)
-    self.standaloneButton.icon:SetTexture(defIcon)
+    self.standaloneButton.icon:SetTexture(self.defaultIcon)
     self.standaloneButton.Text = self.standaloneButton:CreateFontString()
     self.standaloneButton.Text:SetFont("Fonts\\FRIZQT__.TTF", 13)
     self.standaloneButton.Text:SetFontObject(GameFontNormal)
