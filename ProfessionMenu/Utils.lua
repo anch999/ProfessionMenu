@@ -58,7 +58,7 @@ end
 
 local items = {
     {1777028, "Summon Thermal Anvil"}, -- thermal anvil
-    {1904514, "Summon Sanguine Workbench"}, -- sanguine workbench vanity
+    {1904514, "Summon Portable Sanguine Workbench"}, -- sanguine workbench vanity
     {1904515}, -- sanguine workbench soulbound
 }
 
