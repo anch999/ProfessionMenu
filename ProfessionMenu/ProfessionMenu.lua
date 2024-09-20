@@ -94,7 +94,8 @@ end
 
 -- add altar summon button via dewdrop secure
 function PM:AddItem(itemID)
-        local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemID)
+        local item = GetItemInfoInstant(itemID)
+        local name, icon = item.name, item.icon 
         local startTime, duration = GetItemCooldown(itemID)
 		local cooldown = math.ceil(((duration - (GetTime() - startTime))/60))
 		local text = name
