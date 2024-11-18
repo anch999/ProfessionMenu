@@ -158,7 +158,7 @@ function PM:SearchBags()
                     if link and not self.db.ItemBlacklist[itemID] then
                         local itemLevel, _, itemType = select(4,GetItemInfo(itemID))
                         if not self:FilterCheck(quality, bagID, slotID, link) and InventoryTypes[itemType] then
-                            tinsert(inventoryItems,{bagID,slotID,link,quality,itemLevel})
+                            tinsert(inventoryItems,{bagID,slotID,link,quality,itemLevel,itemID})
                         end
                     end
                 end
@@ -167,6 +167,7 @@ function PM:SearchBags()
         bagThrottle = true
         self.bagThrottle = self:ScheduleTimer(function() bagThrottle = false end, .1)
         self:InventroyScrollFrameUpdate()
+        self.inventoryItems = inventoryItems
     end
 end
 
@@ -338,6 +339,13 @@ local rows = setmetatable({}, { __index = function(t, i)
             ItemTemplate_OnEnter(self)
         end
     end)
+    row:SetScript("OnMouseDown", function()
+        local itemID = GetItemInfoFromHyperlink(row.link)
+        local appearanceID = C_Appearance.GetItemAppearanceID(itemID)
+        if appearanceID and not C_AppearanceCollection.IsAppearanceCollected(appearanceID) then
+            C_AppearanceCollection.CollectItemAppearance(itemID)
+        end
+    end)
     row:SetScript("OnEnter", function(self)
         ItemTemplate_OnEnter(self)
     end)
@@ -360,6 +368,23 @@ local extractMenu = CreateFrame("Button", "ProfessionMenu_ExtractInterface_Filte
     extractMenu:RegisterForClicks("LeftButtonDown")
     extractMenu:SetScript("OnClick", function(button)
         self:ItemMenuRegister(button)
+    end)
+--Shows a vendor all thats left button
+local vendorBttn = CreateFrame("Button", "ProfessionMenu_ExtractInterface_AutoVendor", self.DeScrollFrame, "OptionsButtonTemplate")
+    vendorBttn:SetSize(133, 30)
+    vendorBttn:SetPoint("BOTTOMLEFT", self.DeScrollFrame, "BOTTOMLEFT", 0, -35)
+    vendorBttn:RegisterForClicks("LeftButtonDown")
+    vendorBttn:SetText("Vendor All")
+    vendorBttn:SetScript("OnClick", function(button)
+        if not PROFESSIONMENU.inventoryItems then return end
+        for _,item in pairs(PROFESSIONMENU.inventoryItems) do
+            local appearanceID = C_Appearance.GetItemAppearanceID(item[6])
+            if appearanceID and not C_AppearanceCollection.IsAppearanceCollected(appearanceID) then
+                C_AppearanceCollection.CollectItemAppearance(item[6])
+            end
+            PickupContainerItem(item[1], item[2])
+            PickupMerchantItem(0)
+         end
     end)
 
 end
