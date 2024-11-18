@@ -106,3 +106,52 @@ function PM:ReturnSpellIDs()
     end
     return list
 end
+
+PM.BrilliantGlass = {23117,23077,23079,21929,23112,23107}
+
+function PM:PullGuildBankItems(list, number)
+    local emptySlots = {}
+    local function scanBag()
+        for bagID = 0, 4 do
+            for slotID = 1, GetContainerNumSlots(bagID) do
+            local item = GetContainerItemInfo(bagID, slotID)
+                if not item then
+                    tinsert(emptySlots, {bagID,slotID})
+                end
+            end
+        end
+    end
+
+    local function scanGuildBank(ID,bagID,slotID)
+        local tab = GetCurrentGuildBankTab()
+        if not tab then return end
+        for c = 1, 112 do
+        local link = GetGuildBankItemLink(tab, c)
+            if link then
+                local itemID = GetItemInfoFromHyperlink(link)
+                    if itemID == ID and select(2,GetGuildBankItemInfo(tab, c)) >= number then
+                        SplitGuildBankItem(tab, c, number)
+                        PickupContainerItem(bagID,slotID)
+                        return true
+                    end
+            elseif c == 112 then
+                return true
+            end
+        end
+    end
+    scanBag()
+    for num, ID in pairs(list) do
+        local function nextItem()
+            local task = tremove(emptySlots)
+            while task do
+                local complete = scanGuildBank(ID,task[1],task[2])
+                if #list == num or complete then
+                    return
+                else
+                    return nextItem()
+                end
+            end
+        end
+        nextItem()
+    end
+end

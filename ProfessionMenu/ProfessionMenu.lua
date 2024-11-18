@@ -1,4 +1,4 @@
-local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0")
+local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0", "SettingsCreater-1.0")
 PROFESSIONMENU = PM
 PM.defaultIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
 PM.dewdrop = LibStub("Dewdrop-2.0")
@@ -7,59 +7,37 @@ local WHITE = "|cffFFFFFF"
 
 --Set Savedvariables defaults
 local DefaultSettings  = {
-    ShowMenuOnHover = { false, ShowFrame = "ProfessionMenuFrame", CheckBox = "ProfessionMenuOptions_ShowOnHover" },
-    HideMenu = { false, HideFrame = "ProfessionMenuFrame", CheckBox = "ProfessionMenuOptions_HideMenu"},
-    DeleteItem = { false, CheckBox = "ProfessionMenuOptions_DeleteMenu"},
-    minimap = { false, CheckBox = "ProfessionMenuOptions_HideMinimap"},
+    ShowMenuOnHover = { false, ShowFrame = "ProfessionMenuFrame" },
+    HideMenu = { false, HideFrame = "ProfessionMenuFrame"},
+    DeleteItem = { false },
+    minimap = { false },
     txtSize = { 12 },
-    autoMenu = { false, CheckBox = "ProfessionMenuOptions_AutoMenu"},
+    autoMenu = { false },
     FilterList = { {false,false,false,false,false} },
     BagFilter = { {false,false,false,false,false} },
     ItemBlacklist = { { [9149] = true }},
-    hideMaxRank = { false, CheckBox = "ProfessionMenuOptions_HideMaxRank"},
-    hideRank = { false, CheckBox = "ProfessionMenuOptions_HideRank"},
-    showHerb = { false, CheckBox = "ProfessionMenuOptions_ShowHerb"},
-    ShowOldTradeSkillUI = { false, CheckBox = "ProfessionMenuOptions_ShowOldTradeSkillUI"},
-    selfCast = { false, CheckBox = "ProfessionMenuOptions_SelfCast" },
+    hideMaxRank = { false },
+    hideRank = { false },
+    showHerb = { false },
+    ShowOldTradeSkillUI = { false },
+    selfCast = { false },
     Gold = { 55000 }
 }
 
---[[ TableName = Name of the saved setting
-CheckBox = Global name of the checkbox if it has one and first numbered table entry is the boolean
-Text = Global name of where the text and first numbered table entry is the default text 
-Frame = Frame or button etc you want hidden/shown at start based on condition ]]
-local function setupSettings(db, defaultList)
-    db = db or {}
-    for table, v in pairs(defaultList) do
-        if not db[table] and db[table] ~= false then
-            if type(v) == "table" then
-                db[table] = v[1]
-            else
-                db[table] = v
-            end
-        end
-        if type(v) == "table" then
-            if v.CheckBox and _G[v.CheckBox] then
-                _G[v.CheckBox]:SetChecked(db[table])
-            end
-            if v.Text and _G[v.Text] then
-                _G[v.Text]:SetText(db[table])
-            end
-            if v.ShowFrame and _G[v.Frame] then
-                if db[table] then _G[v.Frame]:Show() else _G[v.Frame]:Hide() end
-            end
-            if v.HideFrame and _G[v.HideFrame] then
-                if db[table] then _G[v.HideFrame]:Hide() else _G[v.HideFrame]:Show() end
-            end
-        end
+function PM:OnInitialize()
+    self.db = self:SetupDB("ProfessionMenuDB", DefaultSettings)
+    --Enable the use of /PM or /PROFESSIONMENU to open the loot browser
+    SLASH_PROFESSIONMENU1 = "/PROFESSIONMENU"
+    SLASH_PROFESSIONMENU2 = "/PM"
+    SlashCmdList["PROFESSIONMENU"] = function(msg)
+        PM:SlashCommand(msg)
     end
-    return db
 end
 
 function PM:OnEnable()
 
+    self:CreateOptionsUI()
     self:InitializeMinimap()
-
     if self.db.menuPos then
         self.standaloneButton:ClearAllPoints()
         self.standaloneButton:SetPoint(unpack(self.db.menuPos))
@@ -72,19 +50,6 @@ function PM:OnEnable()
     if self.db.ShowOldTradeSkillUI then
         UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
         self:RegisterEvent("TRADE_SKILL_SHOW")
-    end
-
-    ProfessionMenuFrame:SetScale(self.db.buttonScale or 1)
-
-end
-
-function PM:OnInitialize()
-     self.db = setupSettings(ProfessionMenuDB, DefaultSettings)
-    --Enable the use of /PM or /PROFESSIONMENU to open the loot browser
-    SLASH_PROFESSIONMENU1 = "/PROFESSIONMENU"
-    SLASH_PROFESSIONMENU2 = "/PM"
-    SlashCmdList["PROFESSIONMENU"] = function(msg)
-        PM:SlashCommand(msg)
     end
 end
 
