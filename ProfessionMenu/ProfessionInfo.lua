@@ -1,56 +1,5 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
 
-PM.profCooldowns = {
-    ["Enchanting"] = {
-        28027, -- Prismatic Sphere 
-        28028, -- Void Sphere 
-        979343, -- Transmute: Forbidding Dread Dust 
-        979341, -- Transmute: Forbidding Nether Shard 
-        979342, -- Transmute: Forbidding Twisted Dust 
-        979344, -- Transmute: Forbidding Void Dust 
-    },
-    ["Alchemy"] = {
-        29688, -- Transmute: Primal Might 
-        32765, -- Transmute: Earthstorm Diamond 
-        32766, -- Transmute: Skyfire Diamond 
-        28566, -- Transmute: Primal Air to Fire 
-        28567, -- Transmute: Primal Earth to Water 
-        28568, -- Transmute: Primal Fire to Earth 
-        28569, -- Transmute: Primal Water to Air 
-    },
-    ["Jewelcrafting"] = {
-        47280, -- Brilliant Glass 
-        979840, -- Transmute: Pure Void Metal 
-        979838, -- Transmute: Pure Twisted Metal 
-        979837, -- Transmute: Pure Nether Metal 
-        979839, -- Transmute: Pure Dread Metal 
-    },
-    ["Leatherworking"] = {
-        979331, -- Transmute: Full Grain Dread Leather 
-        979329, -- Transmute: Full Grain Nether Leather 
-        979330, -- Transmute: Full Grain Twisted Leather 
-        979332, -- Transmute: Full Grain Void Leather 
-    },
-    ["Tailoring"] = {
-        26751, -- Primal Mooncloth 
-        36686, -- Shadowcloth 
-        31373, -- Spellcloth 
-        979327, -- Transmute: Reinforced Dread Thread 
-        979325, -- Transmute: Reinforced Nether Thread 
-        979326, -- Transmute: Reinforced Void Thread 
-        979328, -- Transmute: Reinforced Twisted Thread 
-    },
-    ["Engineering"] = {
-        979835, -- Transmute: Pure Dread Metal 
-        979833, -- Transmute: Pure Nether Metal 
-        979836, -- Transmute: Pure Void Metal 
-        979834, -- Transmute: Pure Twisted Metal 
-    },
-    ["Mining"] = {
-        979337, -- Transmute: Pure Nether Metal 
-    },
-}
-
 PM.profList = {
     {
         51304, -- Grand Master 450
@@ -138,5 +87,73 @@ PM.profList = {
         3274, -- Journeyman 150
         3273, -- Apprentice 75
     }, --FIRSTAID
-    {13977860}, --WOODCUTTING
+    {
+        13977860,
+        CraftingSpell = true
+    }, --WOODCUTTING
 }
+
+local profCooldowns = {
+    ["Enchanting"] = {
+        28027, -- Prismatic Sphere 
+        28028, -- Void Sphere 
+        979343, -- Transmute: Forbidding Dread Dust 
+        979341, -- Transmute: Forbidding Nether Shard 
+        979342, -- Transmute: Forbidding Twisted Dust 
+        979344, -- Transmute: Forbidding Void Dust 
+    },
+    ["Alchemy"] = {
+        29688, -- Transmute: Primal Might 
+        32765, -- Transmute: Earthstorm Diamond 
+        32766, -- Transmute: Skyfire Diamond 
+        28566, -- Transmute: Primal Air to Fire 
+        28567, -- Transmute: Primal Earth to Water 
+        28568, -- Transmute: Primal Fire to Earth 
+        28569, -- Transmute: Primal Water to Air 
+    },
+    ["Jewelcrafting"] = {
+        47280, -- Brilliant Glass 
+        979840, -- Transmute: Pure Void Metal 
+        979838, -- Transmute: Pure Twisted Metal 
+        979837, -- Transmute: Pure Nether Metal 
+        979839, -- Transmute: Pure Dread Metal 
+    },
+    ["Leatherworking"] = {
+        979331, -- Transmute: Full Grain Dread Leather 
+        979329, -- Transmute: Full Grain Nether Leather 
+        979330, -- Transmute: Full Grain Twisted Leather 
+        979332, -- Transmute: Full Grain Void Leather 
+    },
+    ["Tailoring"] = {
+        26751, -- Primal Mooncloth 
+        36686, -- Shadowcloth 
+        31373, -- Spellcloth 
+        979327, -- Transmute: Reinforced Dread Thread 
+        979325, -- Transmute: Reinforced Nether Thread 
+        979326, -- Transmute: Reinforced Void Thread 
+        979328, -- Transmute: Reinforced Twisted Thread 
+    },
+    ["Engineering"] = {
+        979835, -- Transmute: Pure Dread Metal 
+        979833, -- Transmute: Pure Nether Metal 
+        979836, -- Transmute: Pure Void Metal 
+        979834, -- Transmute: Pure Twisted Metal 
+    },
+    ["Mining"] = {
+        979337, -- Transmute: Pure Nether Metal 
+    },
+}
+
+function PM:InitalizeProfessionCooldowns()
+    self.ProfessionCooldowns = {}
+    for profession, cooldowns in pairs(profCooldowns) do
+        for _ , cdID in pairs (cooldowns) do
+            local spellName = GetSpellInfo(cdID)
+            self.ProfessionCooldowns[spellName] = {profession, cdID}
+        end
+    end
+end
+
+function PM:ScranProfessionCooldowns()
+
+end

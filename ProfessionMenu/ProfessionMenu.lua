@@ -94,7 +94,7 @@ function PM:AddProfessions()
 
      for _, prof in ipairs(self.profList) do
         for _, spellID in ipairs(prof) do
-            if IsSpellKnown(spellID) and ((prof.Show and self.db[prof.Show]) or not prof.Show) then
+            if CA_IsSpellKnown(spellID) and ((prof.Show and self.db[prof.Show]) or not prof.Show) then
                 local name, _, icon = GetSpellInfo(spellID)
                 if prof.Name then
                     name = prof.Name
@@ -114,10 +114,19 @@ function PM:AddProfessions()
                     name = name .. " |cFF00FFFF("..rank.."/"..maxRank..")"
                 end
                 local selfCast = self.db.selfCast and "[@player] " or ""
-                local secure = {
-                  type1 = "macro",
-                  macrotext = "/cast "..selfCast..profName,
-                }
+                local secure
+                if prof.CraftingSpell then
+                    secure = {
+                        type1 = "spell",
+                        spell = spellID,
+                    }
+                else
+                    secure = {
+                        type1 = "macro",
+                        macrotext = "/cast "..selfCast..profName,
+                    }
+                end
+
                 local openFrame, tooltipTitle, tooltipText
                 if prof.frame then
                     openFrame = true

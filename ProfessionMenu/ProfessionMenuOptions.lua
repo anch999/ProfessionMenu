@@ -11,8 +11,6 @@ end
 
 function ProfessionMenu_OpenOptions()
 	if InterfaceOptionsFrame:GetWidth() < 850 then InterfaceOptionsFrame:SetWidth(850) end
-	ProfessionMenu_DropDownInitialize()
-	UIDropDownMenu_SetText(ProfessionMenuOptionstxtSizeMenu, PM.db.txtSize)
 end
 
 --Creates the options frame and all its assets
@@ -111,7 +109,8 @@ function PM:CreateOptionsUI()
 			{
 				Type = "Menu",
 				Name = "txtSize",
-				Lable = "Menu text size"
+				Lable = "Menu text size",
+				Menu = {10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25}
 			},
 			{
 				Type = "Slider",
@@ -135,7 +134,7 @@ function PM:CreateOptionsUI()
 
 	self.options = self:CreateOptionsPages(Options, ProfessionMenuDB)
 	self.options.discordLink = CreateFrame("Button", "ProfessionMenuOptions_DiscordLink", ProfessionMenuOptionsFrame)
-	self.options.discordLink:SetPoint("TOPLEFT", 15, -455)
+	self.options.discordLink:SetPoint("BOTTOMLEFT", 15, 15)
 	self.options.discordLink.Lable = self.options.discordLink:CreateFontString(nil , "BORDER", "GameFontNormal")
 	self.options.discordLink.Lable:SetJustifyH("LEFT")
 	self.options.discordLink.Lable:SetPoint("LEFT", self.options.discordLink, 0, 0)
@@ -145,26 +144,4 @@ function PM:CreateOptionsUI()
 		DEFAULT_CHAT_FRAME:AddMessage("Discord link copyed to clipboard")
 	end)
 	self.options.discordLink:SetSize(self.options.discordLink.Lable:GetStringWidth(), self.options.discordLink.Lable:GetStringHeight())
-end
-
-function ProfessionMenu_Options_Menu_Initialize()
-	local info
-	for i = 10, 25 do
-				info = {
-					text = i;
-					func = function() 
-						PM.db.txtSize = i 
-						local thisID = this:GetID();
-						UIDropDownMenu_SetSelectedID(ProfessionMenuOptionstxtSizeMenu, thisID)
-					end;
-				};
-					UIDropDownMenu_AddButton(info);
-	end
-end
-
-function ProfessionMenu_DropDownInitialize()
-	--Setup for Dropdown menus in the settings
-	UIDropDownMenu_Initialize(ProfessionMenuOptionstxtSizeMenu, ProfessionMenu_Options_Menu_Initialize )
-	UIDropDownMenu_SetSelectedID(ProfessionMenuOptionstxtSizeMenu)
-	UIDropDownMenu_SetWidth(ProfessionMenuOptionstxtSizeMenu, 150)
 end

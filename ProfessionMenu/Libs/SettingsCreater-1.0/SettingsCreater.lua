@@ -1,15 +1,41 @@
-local MAJOR, MINOR = "SettingsCreater-1.0", 3
+local MAJOR, MINOR = "SettingsCreater-1.0", 4
+local SettingsCreater, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
-if not AceLibrary then error(MAJOR .. " requires AceLibrary") end
-if not AceLibrary:IsNewVersion(MAJOR, MINOR) then return end
-
-local SettingsCreater = {}
+if not SettingsCreater then return end -- No Upgrade needed.
 
 --Round number
 local function round(num, idp)
 	local mult = 10 ^ (idp or 0)
 	return math.floor(num * mult + 0.5) / mult
- end
+end
+
+local function InitializeDropDown(self)
+    local options, opTable, db = unpack(self.Menu)
+	local info, otherDB
+    local frame = options[opTable.Name]
+    if type(opTable.Menu) == "function" then
+        opTable.Menu, otherDB = opTable.Menu()
+    end
+    db = otherDB or db[opTable.Name]
+	for i, menu in pairs(opTable.Menu) do
+		info = {
+			text = menu;
+			func = function()
+                if opTable.Func then
+                    opTable.Func(menu)
+                end
+                db = menu
+                UIDropDownMenu_SetSelectedID(frame, i)
+                UIDropDownMenu_Initialize(options[opTable.Name], InitializeDropDown)
+			end;
+		}
+        UIDropDownMenu_AddButton(info)
+        if menu == db then
+		    UIDropDownMenu_SetSelectedID(frame, i)
+        end
+	end
+	UIDropDownMenu_SetWidth(frame, opTable.menuWidth or 150)
+end
 
 --[[ DB = Name of the db you want to setup
 CheckBox = Global name of the checkbox if it has one and first numbered table entry is the boolean
@@ -79,7 +105,10 @@ local function CreateDropDownMenu(options, db, frame, addonName, setPoint, opTab
     options[opTable.Name]:SetScript("OnClick", opTable.OnClick)
     options[opTable.Name]:SetScript("OnEnter", opTable.Tooltip or opTable.OnEnter)
     options[opTable.Name]:SetScript("OnLeave", opTable.OnLeave or GameTooltip:Hide())
-    options[opTable.Name].Menu = opTable.Menu
+    options[opTable.Name].Menu = { options, opTable, db }
+    if opTable.Menu then
+        UIDropDownMenu_Initialize(options[opTable.Name], InitializeDropDown)
+    end
     return options[opTable.Name]
 end
 
@@ -200,6 +229,9 @@ function SettingsCreater:CreateOptionsPages(data, db)
     return options
 end
 
+-- ---------------------------------------------------------------------
+-- Embed handling
+
 local mixins = {
 	"SetupDB",
 	"CreateOptionsPages",
@@ -208,16 +240,14 @@ local mixins = {
 SettingsCreater.embeds = SettingsCreater.embeds or {}
 
 function SettingsCreater:Embed(target)
+    self.embeds[target] = true
 	for _, v in pairs(mixins) do
 		target[v] = self[v]
 	end
-	self.embeds[target] = true
 	return target
 end
 
 -- Update embeds
-for target, _ in pairs(SettingsCreater.embeds) do
-	SettingsCreater:Embed(target)
+for addon, _ in pairs(SettingsCreater.embeds) do
+	SettingsCreater:Embed(addon)
 end
-
-AceLibrary:Register(SettingsCreater, MAJOR, MINOR)
