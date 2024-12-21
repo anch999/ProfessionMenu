@@ -16,13 +16,13 @@
 
 <Include file="Libs\DewdropLib\embeds.xml"/>
 <Script file="Libs\DewdropLib\Dewdrop-2.0\Dewdrop-2.0.lua"/>
-<Script file="Libs\SettingsCreater-1.0\SettingsCreater.lua"/>
+<Script file="Libs\SettingsCreator-1.0\SettingsCreator.lua"/>
 
 <Script file="ProfessionMenu.lua"/>
 <Script file="ProfessionInfo.lua"/>
 <Script file="Utils.lua"/>
 <Script file="Minimap.lua"/>
-<Script file="ProfessionMenuInventory.lua"/>
-<Script file="ProfessionMenuOptions.lua"/>
+<Script file="InventoryFrame.lua"/>
+<Script file="Options.lua"/>
 
 </Ui>

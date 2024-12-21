@@ -1,4 +1,4 @@
-local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0", "SettingsCreater-1.0")
+local PM = LibStub("AceAddon-3.0"):NewAddon("ProfessionMenu", "AceTimer-3.0", "AceEvent-3.0", "SettingsCreator-1.0")
 PROFESSIONMENU = PM
 PM.defaultIcon = "Interface\\Icons\\achievement_guildperk_bountifulbags"
 PM.dewdrop = LibStub("Dewdrop-2.0")
@@ -8,7 +8,7 @@ local WHITE = "|cffFFFFFF"
 --Set Savedvariables defaults
 local DefaultSettings  = {
     ShowMenuOnHover = { false, ShowFrame = "ProfessionMenuFrame" },
-    HideMenu = { false, HideFrame = "ProfessionMenuFrame"},
+    HideMenu = { false },
     DeleteItem = { false },
     minimap = { false },
     txtSize = { 12 },
@@ -38,15 +38,7 @@ function PM:OnEnable()
 
     self:CreateOptionsUI()
     self:InitializeMinimap()
-    if self.db.menuPos then
-        self.standaloneButton:ClearAllPoints()
-        self.standaloneButton:SetPoint(unpack(self.db.menuPos))
-    else
-        self.standaloneButton:ClearAllPoints()
-        self.standaloneButton:SetPoint("CENTER", UIParent)
-    end
-
-    --self:RegisterEvent("ADDON_LOADED")
+    self:InitializeStandaloneButton()
     if self.db.ShowOldTradeSkillUI then
         UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
         self:RegisterEvent("TRADE_SKILL_SHOW")
@@ -248,18 +240,6 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
     GameTooltip:Hide()
 end
 
-function PM:ToggleMainButton(hide)
-    if self.db.ShowMenuOnHover then
-        if hide then
-            self.standaloneButton.icon:Hide()
-            self.standaloneButton.Text:Hide()
-        else
-            self.standaloneButton.icon:Show()
-            self.standaloneButton.Text:Show()
-        end
-    end
-end
-
 -- Used to show highlight as a frame mover
 function PM:UnlockFrame()
     self = PM
@@ -269,15 +249,21 @@ function PM:UnlockFrame()
         self.standaloneButton.Highlight:Hide()
         self.standaloneButton.unlocked = false
         GameTooltip:Hide()
+        if self.db.ShowMenuOnHover then
+            self.standaloneButton:SetAlpha(0)
+        end
     else
         self.standaloneButton:SetMovable(true)
         self.standaloneButton:RegisterForDrag("LeftButton")
         self.standaloneButton.Highlight:Show()
         self.standaloneButton.unlocked = true
+        if self.db.ShowMenuOnHover then
+            self.standaloneButton:SetAlpha(10)
+        end
     end
 end
 
-function PM:CreateUI()
+function PM:InitializeStandaloneButton()
 --Creates the main interface
 	self.standaloneButton = CreateFrame("Button", "ProfessionMenuFrame", UIParent, nil)
     self.standaloneButton:SetSize(70,70)
@@ -330,17 +316,41 @@ function PM:CreateUI()
             GameTooltip:Show()
         else
             self:OnEnter(button, true)
-            self:ToggleMainButton()
             self.standaloneButton.Highlight:Show()
+        end
+        if self.db.ShowMenuOnHover then
+            self.standaloneButton:SetAlpha(10)
         end
     end)
     self.standaloneButton:SetScript("OnLeave", function()
-        self.standaloneButton.Highlight:Hide()
-        GameTooltip:Hide()
-        self:ToggleMainButton(true)
+        if not self.standaloneButton.unlocked  then
+            self.standaloneButton.Highlight:Hide()
+            GameTooltip:Hide()
+            if self.db.ShowMenuOnHover then
+                self.standaloneButton:SetAlpha(0)
+            end
+        end
     end)
+    if self.db.menuPos then
+        self.standaloneButton:ClearAllPoints()
+        self.standaloneButton:SetPoint(unpack(self.db.menuPos))
+    else
+        self.standaloneButton:ClearAllPoints()
+        self.standaloneButton:SetPoint("CENTER", UIParent)
+    end
+    self:SetFrameAlpha()
+    if not self.db.HideMenu then
+        self.standaloneButton:Show()
+    end
 end
-PM:CreateUI()
+
+function PM:SetFrameAlpha()
+    if self.db.ShowMenuOnHover then
+        self.standaloneButton:SetAlpha(0)
+    else
+        self.standaloneButton:SetAlpha(10)
+    end
+end
 
 InterfaceOptionsFrame:HookScript("OnShow", function()
     if InterfaceOptionsFrame and ProfessionMenuOptionsFrame:IsVisible() then

@@ -42,7 +42,7 @@ function PM:CreateOptionsUI()
 				Lable = "Only Show Standalone Button on Hover",
 				OnClick = function()
 					self.db.ShowMenuOnHover = not self.db.ShowMenuOnHover
-					self:ToggleMainButton(self.db.ShowMenuOnHover)
+					self:SetFrameAlpha()
 				end
 			},
 			{

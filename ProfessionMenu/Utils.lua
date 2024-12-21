@@ -69,6 +69,7 @@ function PM:RemoveItem(arg2)
         if arg2 == item[2] then
             local found, bag, slot = self:HasItem(item[1])
             if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and self:IsSoulbound(bag, slot) then
+                ClearCursor()
                 PickupContainerItem(bag, slot)
                 DeleteCursorItem()
             end
