@@ -27,12 +27,14 @@ function PM:InitializeInventoryUI()
             self.InventoryFrame.TitleText:SetText("Disenchanting List")
             self.InventoryFrame.vendorBttn:Show()
             self.InventoryFrame.filterMenu:Show()
+            self.InventoryFrame.moneyFrame:Show()
             self.InventoryFrame.openFirstBtn:Hide()
             self:SearchBags()
         elseif self.InventoryFrame.profession == "Lockpicking" then
             self.InventoryFrame.TitleText:SetText("Lockpicking List")
             self.InventoryFrame.vendorBttn:Hide()
             self.InventoryFrame.filterMenu:Hide()
+            self.InventoryFrame.moneyFrame:Hide()
             self.InventoryFrame.openFirstBtn:Show()
             self:SearchBagsLockboxs()
         end
@@ -179,6 +181,31 @@ function PM:InitializeInventoryUI()
 
     self.DeScrollFrame.rows = rows
 
+	self.InventoryFrame.moneyFrame = CreateFrame("Frame", "ProfessionMenu_InventoryFramePrice", self.InventoryFrame, "MoneyInputFrameTemplate")
+	self.InventoryFrame.moneyFrame:SetPoint("TOP", self.DeScrollFrame, "BOTTOM", 20, -10)
+	self.InventoryFrame.moneyFrame:SetScript("OnShow", function()
+		MoneyInputFrame_SetCopper(ProfessionMenu_InventoryFramePrice,self.db.Gold)
+		end)
+		MoneyInputFrame_SetOnValueChangedFunc(self.InventoryFrame.moneyFrame, function()
+			self.db.Gold = MoneyInputFrame_GetCopper(self.InventoryFrame.moneyFrame)
+		end)
+
+    self.InventoryFrame.moneyEnable = CreateFrame("CheckButton", "ProfessionMenu_InventoryFramePriceCheck", self.InventoryFrame, "UICheckButtonTemplate")
+    self.InventoryFrame.moneyEnable:SetPoint("RIGHT", self.InventoryFrame.moneyFrame, "LEFT", -10, -1)
+    self.InventoryFrame.moneyEnable:SetScript("OnShow", function()
+        self.InventoryFrame.moneyEnable:SetChecked(self.db.GoldFilter)
+    end)
+    self.InventoryFrame.moneyEnable:SetScript("OnClick", function()
+        self.db.GoldFilter = self.InventoryFrame.moneyEnable:GetChecked()
+        self:SearchBags()
+    end)
+    self.InventoryFrame.moneyEnable:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_TOP")
+        GameTooltip:AddLine("Toggle money filter")
+        GameTooltip:Show()
+    end)
+    self.InventoryFrame.moneyEnable:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     --Shows a menu with options and sharing options
     self.InventoryFrame.filterMenu = CreateFrame("Button", "ProfessionMenu_InventoryFrameFilterMenu", self.InventoryFrame, "FilterDropDownMenuTemplate")
     self.InventoryFrame.filterMenu:SetSize(133, 30)
@@ -204,6 +231,12 @@ function PM:InitializeInventoryUI()
             PickupMerchantItem(0)
         end
     end)
+    self.InventoryFrame.vendorBttn:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_TOP")
+        GameTooltip:AddLine("Vendor all currenty shown items if merchant is open")
+        GameTooltip:Show()
+    end)
+    self.InventoryFrame.vendorBttn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     --Shows a openFirstBtn button
     self.InventoryFrame.openFirstBtn = CreateFrame("Button", "ProfessionMenu_InventoryFrameVendorButton", self.InventoryFrame, "OptionsButtonTemplate,SecureActionButtonTemplate")
@@ -234,7 +267,6 @@ PM.FilterList = {
     [2] = {"Rare", 3},
     [3] = {"Epic", 4},
     Soulbound = "Soulbound",
-    Gold = "Gold",
     Bags = {
         "Backpack",
         "Bag 1",
@@ -344,7 +376,7 @@ end
 function PM:FilterCheck(quality, bagID, slotID, link)
     for _, _ in ipairs(self.FilterList) do
         local binding = self:GetTooltipItemInfo(nil, bagID, slotID)
-        if (self.db.FilterList[4] and binding.isSoulbound) or (self.db.FilterList[5] and select(11, GetItemInfo(link)) > self.db.Gold ) or (quality < 1 or quality > 5) or self.db.FilterList[quality-1] then
+        if (self.db.FilterList[4] and binding.isSoulbound) or (self.db.GoldFilter and select(11, GetItemInfo(link)) > self.db.Gold ) or (quality < 1 or quality > 5) or self.db.FilterList[quality-1] then
             return true
         end
     end
@@ -425,13 +457,6 @@ function PM:ItemMenuRegister(button)
                     'text', self.FilterList.Soulbound,
                     'func', function() self.db.FilterList[4] = not self.db.FilterList[4] self:SearchBags() end,
                     'checked', self.db.FilterList[4],
-                    'textHeight', 12,
-                    'textWidth', 12
-                )
-                dewdrop:AddLine(
-                    'text', self.FilterList.Gold,
-                    'func', function() self.db.FilterList[5] = not self.db.FilterList[5] self:SearchBags() end,
-                    'checked', self.db.FilterList[5],
                     'textHeight', 12,
                     'textWidth', 12
                 )

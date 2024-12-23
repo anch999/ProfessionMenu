@@ -21,7 +21,8 @@ local DefaultSettings  = {
     showHerb = { false },
     ShowOldTradeSkillUI = { false },
     selfCast = { false },
-    Gold = { 55000 }
+    Gold = { 55000 },
+    GoldFilter = { false }
 }
 
 function PM:OnInitialize()
