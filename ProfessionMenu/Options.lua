@@ -9,13 +9,8 @@ function PM:Options_Toggle()
 	end
 end
 
-function ProfessionMenu_OpenOptions()
-	if InterfaceOptionsFrame:GetWidth() < 850 then InterfaceOptionsFrame:SetWidth(850) end
-end
-
 --Creates the options frame and all its assets
-
-function PM:CreateOptionsUI()
+function PM:InitializeOptionsUI()
 	local Options = {
 		AddonName = "ProfessionMenu",
 		TitleText = "Profession Menu",
@@ -130,7 +125,6 @@ function PM:CreateOptionsUI()
 		}
 		}
 	}
-
 
 	self.options = self:CreateOptionsPages(Options, ProfessionMenuDB)
 	self.options.discordLink = CreateFrame("Button", "ProfessionMenuOptions_DiscordLink", ProfessionMenuOptionsFrame)

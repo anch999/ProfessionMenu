@@ -35,10 +35,10 @@ function PM:OnInitialize()
 end
 
 function PM:OnEnable()
-
-    self:CreateOptionsUI()
+    self:InitializeOptionsUI()
     self:InitializeMinimap()
     self:InitializeStandaloneButton()
+    self:InitializeInventoryUI()
     if self.db.ShowOldTradeSkillUI then
         UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
         self:RegisterEvent("TRADE_SKILL_SHOW")
@@ -46,6 +46,12 @@ function PM:OnEnable()
 end
 
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
+    if self.InventoryFrame:IsVisible() and self.InventoryFrame.profession == "Lockpicking" then
+        self:ScheduleTimer(function()
+            self:SearchBagsLockboxs()
+            self:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+        end, .5)
+    end
 	self:RemoveItem(arg2)
 end
 
@@ -105,32 +111,41 @@ function PM:AddProfessions()
                 if not self.db.hideMaxRank and not self.db.hideRank then
                     name = name .. " |cFF00FFFF("..rank.."/"..maxRank..")"
                 end
+
+                local tooltipTitle, tooltipText, leftClick, rightClick
+                local btnClick = "type1"
+                if prof.rightClick then
+                    tooltipTitle = prof.rightClick[2]
+                    tooltipText = prof.rightClick[3]
+                    rightClick = function() self:InventoryFrameOpen(prof.rightClick[2]) end
+                elseif prof.leftClick then
+                    tooltipTitle = prof.leftClick[2]
+                    tooltipText = prof.leftClick[3]
+                    leftClick = function() self:InventoryFrameOpen(prof.leftClick[2]) end
+                    btnClick = "type2"
+                end
+
                 local selfCast = self.db.selfCast and "[@player] " or ""
                 local secure
                 if prof.CraftingSpell then
                     secure = {
-                        type1 = "spell",
+                        [btnClick] = "spell",
                         spell = spellID,
                     }
                 else
                     secure = {
-                        type1 = "macro",
+                        [btnClick] = "macro",
                         macrotext = "/cast "..selfCast..profName,
                     }
                 end
 
-                local openFrame, tooltipTitle, tooltipText
-                if prof.frame then
-                    openFrame = true
-                    tooltipTitle = prof.frame[2]
-                    tooltipText = prof.frame[3]
-                end
                 self.dewdrop:AddLine(
                         'text', name,
                         'icon', icon,
                         'secure', secure,
                         'closeWhenClicked', true,
-                        'funcRight', function() self:InventoryFrame_Open(openFrame) end,
+                        'func', leftClick,
+                        'funcRight', rightClick,
                         'textHeight', self.db.txtSize,
                         'textWidth', self.db.txtSize,
                         'tooltipTitle', tooltipTitle,
@@ -181,17 +196,42 @@ function PM:DewdropRegister(button, showUnlock, resetPoint)
                 self.dewdrop:AddLine( 'text', name, 'icon', icon, 'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)
             end
 
-            local spellIDs = self:ReturnSpellIDs()
-            if #spellIDs > 0 then
+            local spells = self:ReturnSpellIDs()
+            if #spells > 0 then
                 self:AddDividerLine(35)
-                for _, spellID in ipairs(spellIDs) do
-                    local name, _, icon = GetSpellInfo(spellID)
-                    local selfCast = self.db.selfCast and "[@player] " or ""
-                    local secure = {
-                      type1 = "macro",
-                      macrotext = "/cast "..selfCast..name,
-                    }
-                    self.dewdrop:AddLine( 'text', name, 'icon', icon,'secure', secure, 'closeWhenClicked', true, 'textHeight', self.db.txtSize, 'textWidth', self.db.txtSize)    
+                for _, spellInfo in ipairs(spells) do
+
+                    local tooltipTitle, tooltipText, leftClick, rightClick
+                    local btnClick = "type1"
+                    if spellInfo.rightClick then
+                        tooltipTitle = spellInfo.rightClick[1]
+                        tooltipText = spellInfo.rightClick[2]
+                        rightClick = function() self:InventoryFrameOpen(spellInfo.rightClick[1]) end
+                    elseif spellInfo.leftClick then
+                        tooltipTitle = spellInfo.leftClick[1]
+                        tooltipText = spellInfo.leftClick[2]
+                        leftClick = function() self:InventoryFrameOpen(spellInfo.leftClick[1]) end
+                        btnClick = "type2"
+                    end
+
+                    local name, _, icon = GetSpellInfo(spellInfo[1])
+                        local selfCast = self.db.selfCast and "[@player] " or ""
+                        local secure = {
+                        [btnClick] = "macro",
+                        macrotext = "/cast "..selfCast..name,
+                        }
+                    self.dewdrop:AddLine(
+                        'text', name,
+                        'icon', icon,
+                        'secure', secure,
+                        'closeWhenClicked', true,
+                        'textHeight', self.db.txtSize,
+                        'textWidth', self.db.txtSize,
+                        'func', leftClick,
+                        'funcRight', rightClick,
+                        'tooltipTitle', tooltipTitle,
+                        'tooltipText', tooltipText
+                    )
                 end
             end
             self:AddDividerLine(35)
@@ -351,12 +391,6 @@ function PM:SetFrameAlpha()
         self.standaloneButton:SetAlpha(10)
     end
 end
-
-InterfaceOptionsFrame:HookScript("OnShow", function()
-    if InterfaceOptionsFrame and ProfessionMenuOptionsFrame:IsVisible() then
-		ProfessionMenu_OpenOptions()
-    end
-end)
 
 -- toggle the main button frame
 function PM:ToggleMainFrame()

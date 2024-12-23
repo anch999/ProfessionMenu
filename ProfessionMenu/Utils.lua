@@ -10,21 +10,6 @@ function PM:GetTipAnchor(frame)
     return vhalf .. hhalf, frame, (vhalf == 'TOP' and 'BOTTOM' or 'TOP') .. hhalf
 end
 
-local cTip = CreateFrame("GameTooltip","cTooltip",nil,"GameTooltipTemplate")
-
-function PM:IsSoulbound(bag, slot)
-    cTip:SetOwner(UIParent, "ANCHOR_NONE")
-    cTip:SetBagItem(bag, slot)
-    cTip:Show()
-    for i = 1,cTip:NumLines() do
-        if(_G["cTooltipTextLeft"..i]:GetText()==ITEM_SOULBOUND) then
-            return true
-        end
-    end
-    cTip:Hide()
-    return false
-end
-
 -- returns true, if player has item with given ID in inventory or bags and it's not on cooldown
 function PM:HasItem(itemID)
 	local item, found, id
@@ -68,7 +53,8 @@ function PM:RemoveItem(arg2)
 	for _, item in ipairs(items) do
         if arg2 == item[2] then
             local found, bag, slot = self:HasItem(item[1])
-            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and self:IsSoulbound(bag, slot) then
+            local binding = self:GetTooltipItemInfo(nil, bag, slot)
+            if found and C_VanityCollection.IsCollectionItemOwned(item[1]) and binding.isSoulbound then
                 ClearCursor()
                 PickupContainerItem(bag, slot)
                 DeleteCursorItem()
@@ -89,20 +75,20 @@ function PM:ReturnItemIDs()
 end
 
 local profSubList = {
-    13262,
-    31252,
-    818,
-    1804,
-    1501804,
-    13977834,
+    {13262, leftClick = {"Enchanting", "Left click to open disenchanting interface Right click to use disenchanting"}},
+    {31252},
+    {818},
+    {1804, leftClick = {"Lockpicking", "Left click to open lockpicking interface Right click to use lockpicking"}},
+    {1501804, leftClick = {"Lockpicking", "Lockpicking", "Left click to open lockpicking interface Right click to use lockpicking"}},
+    {13977834},
 }
 
 -- returns a list of known spellIDs
 function PM:ReturnSpellIDs()
     local list = {}
-    for _, spellID in ipairs(profSubList) do
-        if CA_IsSpellKnown(spellID) then
-            tinsert(list, spellID)
+    for _, spell in ipairs(profSubList) do
+        if CA_IsSpellKnown(spell[1]) then
+            tinsert(list, spell)
         end
     end
     return list
@@ -155,4 +141,39 @@ function PM:PullGuildBankItems(list, number)
         end
         nextItem()
     end
+end
+
+--========================================
+-- Retrieve additional item info via the
+-- item's tooltip
+--========================================
+local cTip = CreateFrame("GameTooltip","cTooltip",nil,"GameTooltipTemplate")
+function PM:GetTooltipItemInfo(link, bag, slot)
+    cTip:SetOwner(UIParent, "ANCHOR_NONE")
+
+    -- set up return values
+    local binds = {}
+
+    -- generate item tooltip in hidden tooltip object
+    if link then
+        cTip:SetHyperlink(link)
+    elseif bag and slot then
+        cTip:SetBagItem(bag, slot)
+    else
+        return
+    end
+
+    for i = 1,cTip:NumLines() do
+        local text = _G["cTooltipTextLeft"..i]:GetText()
+        if text == "Realm Bound" then binds.isRealmbound = true end
+        if text == ITEM_SOULBOUND then  binds.isSoulbound = true end
+        if text == ITEM_BIND_ON_PICKUP then binds.isBoP = true end
+        if text == ITEM_SPELL_KNOWN then binds.isKnown = true end
+        if text == LOCKED then binds.isLocked = true end
+        if text == "<Right Click to Open>" or text == "\"Right Click to Open\"" then binds.isUnlocked = true end
+    end
+
+    cTip:Hide()
+
+    return binds
 end

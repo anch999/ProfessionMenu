@@ -1,34 +1,233 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
 local dewdrop = AceLibrary("Dewdrop-2.0")
-function PM:CreateInventoryUI()
-    self.Extractframe = CreateFrame("FRAME", "ProfessionMenuExtractFrame", UIParent,"UIPanelDialogTemplate")
-        local mainframe = self.Extractframe
-        mainframe:SetSize(640,508)
-        mainframe:SetPoint("CENTER",0,0)
-        mainframe:EnableMouse(true)
-        mainframe:SetMovable(true)
-        mainframe:SetToplevel(true)
-        mainframe:RegisterForDrag("LeftButton")
-        mainframe:SetScript("OnDragStart", function(self) mainframe:StartMoving() end)
-        mainframe:SetScript("OnDragStop", function(self) mainframe:StopMovingOrSizing() end)
-        mainframe:SetScript("OnShow", function()
+local GREY = "|cff999999"
+local RED = "|cffff0000"
+local WHITE = "|cffFFFFFF"
+local GREEN = "|cff1eff00"
+local LIMEGREEN = "|cFF32CD32"
+local BLUE = "|cff0070dd"
+local ORANGE = "|cffFF8400"
+local YELLOW = "|cffFFd200"
+
+local inventoryItems
+local bagThrottle = false
+
+function PM:InitializeInventoryUI()
+    self.InventoryFrame = CreateFrame("FRAME", "ProfessionMenuExtractFrame", UIParent,"UIPanelDialogTemplate")
+    self.InventoryFrame:SetSize(640,508)
+    self.InventoryFrame:SetPoint("CENTER",0,0)
+    self.InventoryFrame:EnableMouse(true)
+    self.InventoryFrame:SetMovable(true)
+    self.InventoryFrame:SetToplevel(true)
+    self.InventoryFrame:RegisterForDrag("LeftButton")
+    self.InventoryFrame:SetScript("OnDragStart", function() self.InventoryFrame:StartMoving() end)
+    self.InventoryFrame:SetScript("OnDragStop", function() self.InventoryFrame:StopMovingOrSizing() end)
+    self.InventoryFrame:SetScript("OnShow", function()
+        if self.InventoryFrame.profession == "Enchanting" then
+            self.InventoryFrame.TitleText:SetText("Disenchanting List")
+            self.InventoryFrame.vendorBttn:Show()
+            self.InventoryFrame.filterMenu:Show()
+            self.InventoryFrame.openFirstBtn:Hide()
             self:SearchBags()
-            self:RegisterEvent("BAG_UPDATE")
+        elseif self.InventoryFrame.profession == "Lockpicking" then
+            self.InventoryFrame.TitleText:SetText("Lockpicking List")
+            self.InventoryFrame.vendorBttn:Hide()
+            self.InventoryFrame.filterMenu:Hide()
+            self.InventoryFrame.openFirstBtn:Show()
+            self:SearchBagsLockboxs()
+        end
+        self:RegisterEvent("BAG_UPDATE")
+    end)
+    self.InventoryFrame:SetScript("OnHide", function()
+        self.InventoryFrame.profession = nil
+        self:UnregisterEvent("BAG_UPDATE")
+    end)
+    self.InventoryFrame.TitleText = self.InventoryFrame:CreateFontString()
+    self.InventoryFrame.TitleText:SetFont("Fonts\\FRIZQT__.TTF", 12)
+    self.InventoryFrame.TitleText:SetFontObject(GameFontNormal)
+    self.InventoryFrame.TitleText:SetPoint("TOP", 0, -9)
+    self.InventoryFrame.TitleText:SetShadowOffset(1,-1)
+    self.InventoryFrame:Hide()
+
+------------------ScrollFrameTooltips---------------------------
+    local function ItemTemplate_OnEnter(self)
+        if not self.link and (not self.bag and not self.slot) then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT", -13, -50)
+        if self.bag and self.slot then
+            GameTooltip:SetBagItem(self.bag, self.slot)
+        else
+            GameTooltip:SetHyperlink(self.link)
+        end
+        GameTooltip:Show()
+    end
+
+    local function ItemTemplate_OnLeave()
+        GameTooltip:Hide()
+    end
+
+    --ScrollFrame
+
+    local ROW_HEIGHT = 16   -- How tall is each row?
+    local MAX_ROWS = 25      -- How many rows can be shown at once?
+
+    self.DeScrollFrame = CreateFrame("Frame", "", self.InventoryFrame)
+    self.DeScrollFrame:EnableMouse(true)
+    self.DeScrollFrame:SetSize(self.InventoryFrame:GetWidth()-40, ROW_HEIGHT * MAX_ROWS + 16)
+    self.DeScrollFrame:SetPoint("TOP",0,-42)
+    self.DeScrollFrame:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 16,
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+
+    function self:InventroyScrollFrameUpdate()
+        local maxValue = #inventoryItems
+        FauxScrollFrame_Update(self.DeScrollFrame.scrollBar, maxValue, MAX_ROWS, ROW_HEIGHT)
+        local offset = FauxScrollFrame_GetOffset(self.DeScrollFrame.scrollBar)
+        for i = 1, MAX_ROWS do
+            local value = i + offset
+            self.DeScrollFrame.rows[i]:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+            self.DeScrollFrame.rows[i]:Hide()
+            if value <= maxValue then
+                local row = self.DeScrollFrame.rows[i]
+                local text1, text2 = self:GetPosibleMats(inventoryItems[value][4], inventoryItems[value][5])
+                row.Text:SetText(inventoryItems[value][3])
+                row.Text1:SetText(text1)
+                if text2 then
+                    row.Text2:SetText(text2)
+                else
+                    row.Text2:SetText("")
+                end
+                row.link = inventoryItems[value][3]
+                row.bag = inventoryItems[value][1]
+                row.slot = inventoryItems[value][2]
+                row.type = inventoryItems[value][7]
+                if self.InventoryFrame.profession == "Enchanting" then
+                    row:SetAttribute("type", "spell")
+                    row:SetAttribute("spell", "Disenchant")
+                    row:SetAttribute("target-bag", row.bag)
+                    row:SetAttribute("target-slot", row.slot)
+                elseif self.InventoryFrame.profession == "Lockpicking" then
+                    if inventoryItems[value][7] == "locked" then
+                        row:SetAttribute("type", "spell")
+                        row:SetAttribute("spell", "Pick Lock")
+                        row:SetAttribute("target-bag", row.bag)
+                        row:SetAttribute("target-slot", row.slot)
+                        row.Text1:SetText(RED.."Locked")
+                    elseif inventoryItems[value][7] == "unLocked" then
+                        row:SetAttribute("type", "item")
+                        row:SetAttribute("item", row.bag.." "..row.slot)
+                        row.Text1:SetText(GREEN.."Unlocked")
+                    end
+                end
+                row.tNumber = value
+                row:Show()
+            end
+        end
+    end
+
+    self.DeScrollFrame.scrollBar = CreateFrame("ScrollFrame","ProfessionMenuDEListFrameScroll",self.DeScrollFrame,"FauxScrollFrameTemplate")
+    self.DeScrollFrame.scrollBar:SetPoint("TOPLEFT", 0, -8)
+    self.DeScrollFrame.scrollBar:SetPoint("BOTTOMRIGHT", -30, 8)
+    self.DeScrollFrame.scrollBar:SetScript("OnVerticalScroll", function(self, offset)
+        self.offset = math.floor(offset / ROW_HEIGHT + 0.5)
+        PM:InventroyScrollFrameUpdate()
+    end)
+
+    local rows = setmetatable({}, { __index = function(t, i)
+        local row = CreateFrame("Button", "$parentRow"..i, self.DeScrollFrame, "SecureActionButtonTemplate")
+        if i == 1 then self.InventoryFrame.firstButton = row end
+        row:SetSize(405, ROW_HEIGHT)
+        row:SetNormalFontObject(GameFontHighlightLeft)
+        row.Text = row:CreateFontString("$parentRow"..i.."Text","OVERLAY","GameFontNormal")
+        row.Text:SetSize(230, ROW_HEIGHT)
+        row.Text:SetPoint("LEFT",row)
+        row.Text:SetJustifyH("LEFT")
+        row.Text1 = row:CreateFontString("$parentRow"..i.."Text1","OVERLAY","GameFontNormal")
+        row.Text1:SetSize(180, ROW_HEIGHT)
+        row.Text1:SetPoint("LEFT",row,230,0)
+        row.Text1:SetJustifyH("LEFT")
+        row.Text2 = row:CreateFontString("$parentRow"..i.."Text2","OVERLAY","GameFontNormal")
+        row.Text2:SetSize(180, ROW_HEIGHT)
+        row.Text2:SetPoint("LEFT",row,390,0)
+        row.Text2:SetJustifyH("LEFT")
+        row:SetScript("OnShow", function(self)
+            if GameTooltip:GetOwner() == self:GetName() then
+                ItemTemplate_OnEnter(self)
+            end
         end)
-        mainframe:SetScript("OnHide", function()
-            self:UnregisterEvent("BAG_UPDATE")
+        row:SetScript("OnMouseDown", function()
+            local itemID = GetItemInfoFromHyperlink(row.link)
+            local appearanceID = C_Appearance.GetItemAppearanceID(itemID)
+            if appearanceID and not C_AppearanceCollection.IsAppearanceCollected(appearanceID) then
+                C_AppearanceCollection.CollectItemAppearance(itemID)
+            end
+            self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
         end)
-        mainframe.TitleText = mainframe:CreateFontString()
-        mainframe.TitleText:SetFont("Fonts\\FRIZQT__.TTF", 12)
-        mainframe.TitleText:SetFontObject(GameFontNormal)
-        mainframe.TitleText:SetText("Disenchanting List")
-        mainframe.TitleText:SetPoint("TOP", 0, -9)
-        mainframe.TitleText:SetShadowOffset(1,-1)
-        mainframe:Hide()
-        --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
-	    tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
+        row:SetScript("OnEnter", function(self)
+            ItemTemplate_OnEnter(self)
+        end)
+        row:SetScript("OnLeave", ItemTemplate_OnLeave)
+        if i == 1 then
+            row:SetPoint("TOPLEFT", self.DeScrollFrame, 8, -8)
+        else
+            row:SetPoint("TOPLEFT", self.DeScrollFrame.rows[i-1], "BOTTOMLEFT")
+        end
+        rawset(t, i, row)
+        return row
+    end })
+
+    self.DeScrollFrame.rows = rows
+
+    --Shows a menu with options and sharing options
+    self.InventoryFrame.filterMenu = CreateFrame("Button", "ProfessionMenu_InventoryFrameFilterMenu", self.InventoryFrame, "FilterDropDownMenuTemplate")
+    self.InventoryFrame.filterMenu:SetSize(133, 30)
+    self.InventoryFrame.filterMenu:SetPoint("BOTTOMRIGHT", self.DeScrollFrame, "BOTTOMRIGHT", 0, -35)
+    self.InventoryFrame.filterMenu:RegisterForClicks("LeftButtonDown")
+    self.InventoryFrame.filterMenu:SetScript("OnClick", function(button)
+        self:ItemMenuRegister(button)
+    end)
+    --Shows a vendor all thats left button
+    self.InventoryFrame.vendorBttn = CreateFrame("Button", "ProfessionMenu_InventoryFrameVendorButton", self.InventoryFrame, "OptionsButtonTemplate")
+    self.InventoryFrame.vendorBttn:SetSize(133, 30)
+    self.InventoryFrame.vendorBttn:SetPoint("BOTTOMLEFT", self.DeScrollFrame, "BOTTOMLEFT", 0, -35)
+    self.InventoryFrame.vendorBttn:RegisterForClicks("LeftButtonDown")
+    self.InventoryFrame.vendorBttn:SetText("Vendor All")
+    self.InventoryFrame.vendorBttn:SetScript("OnClick", function(button)
+        if not PROFESSIONMENU.inventoryItems then return end
+        for _,item in pairs(PROFESSIONMENU.inventoryItems) do
+            local appearanceID = C_Appearance.GetItemAppearanceID(item[6])
+            if appearanceID and not C_AppearanceCollection.IsAppearanceCollected(appearanceID) then
+                C_AppearanceCollection.CollectItemAppearance(item[6])
+            end
+            PickupContainerItem(item[1], item[2])
+            PickupMerchantItem(0)
+        end
+    end)
+
+    --Shows a openFirstBtn button
+    self.InventoryFrame.openFirstBtn = CreateFrame("Button", "ProfessionMenu_InventoryFrameVendorButton", self.InventoryFrame, "OptionsButtonTemplate,SecureActionButtonTemplate")
+    self.InventoryFrame.openFirstBtn:SetSize(133, 30)
+    self.InventoryFrame.openFirstBtn:SetPoint("BOTTOMLEFT", self.DeScrollFrame, "BOTTOMLEFT", 0, -35)
+    self.InventoryFrame.openFirstBtn:RegisterForClicks("LeftButtonDown")
+    self.InventoryFrame.openFirstBtn:SetText("Unlock/Open First")
+    self.InventoryFrame.openFirstBtn:SetScript("OnEnter", function(button)
+        local firstButton = self.InventoryFrame.firstButton
+        if not firstButton then return end
+        if firstButton.type == "locked" then
+            button:SetAttribute("type", "spell")
+            button:SetAttribute("spell", "Pick Lock")
+            button:SetAttribute("target-bag", firstButton.bag)
+            button:SetAttribute("target-slot", firstButton.slot)
+        elseif firstButton.type == "unLocked" then
+            button:SetAttribute("type", "item")
+            button:SetAttribute("item", firstButton.bag.." "..firstButton.slot)
+        end
+    end)
+
+    --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
+    tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
 end
-PM:CreateInventoryUI()
 
 PM.FilterList = {
     [1] = {"Uncommon", 2},
@@ -123,30 +322,35 @@ local InventoryTypes = {
     ["Armor"] = true
 }
 
-function PM:InventoryFrame_Open(isEnabled)
-    if not isEnabled then return end
-    if self.Extractframe:IsVisible() then
-        self.Extractframe:Hide()
+function PM:InventoryFrameOpen(profession)
+    if not profession then return end
+    if self.InventoryFrame:IsVisible() then
+        self.InventoryFrame:Hide()
+        self.InventoryFrame.profession = nil
     else
-        self.Extractframe:Show()
+        self.InventoryFrame.profession = profession
+        self.InventoryFrame:Show()
     end
 end
 
 function PM:BAG_UPDATE()
-    self:ScheduleTimer(function() self:SearchBags() end, .10)
+    if self.InventoryFrame.profession == "Enchanting" then
+        self:ScheduleTimer(function() self:SearchBags() end, .10)
+    elseif self.InventoryFrame.profession == "Lockpicking" then
+        self:ScheduleTimer(function() self:SearchBagsLockboxs() end, .10)
+    end
 end
 
 function PM:FilterCheck(quality, bagID, slotID, link)
     for _, _ in ipairs(self.FilterList) do
-        if (self.db.FilterList[4] and self:IsSoulbound(bagID, slotID)) or (self.db.FilterList[5] and select(11, GetItemInfo(link)) > self.db.Gold ) or (quality < 1 or quality > 5) or self.db.FilterList[quality-1] then
+        local binding = self:GetTooltipItemInfo(nil, bagID, slotID)
+        if (self.db.FilterList[4] and binding.isSoulbound) or (self.db.FilterList[5] and select(11, GetItemInfo(link)) > self.db.Gold ) or (quality < 1 or quality > 5) or self.db.FilterList[quality-1] then
             return true
         end
     end
     return false
 end
 
-local inventoryItems
-local bagThrottle = false
 --finds the next bag slot with an item with an enchant on it
 function PM:SearchBags()
     if not bagThrottle then
@@ -162,6 +366,29 @@ function PM:SearchBags()
                             tinsert(inventoryItems,{bagID,slotID,link,quality,itemLevel,itemID})
                         end
                     end
+                end
+            end
+        end
+        bagThrottle = true
+        self.bagThrottle = self:ScheduleTimer(function() bagThrottle = false end, .1)
+        self:InventroyScrollFrameUpdate()
+        self.inventoryItems = inventoryItems
+    end
+end
+
+--finds the next bag slot with an item with an enchant on it
+function PM:SearchBagsLockboxs()
+    if not bagThrottle then
+        inventoryItems = {}
+        for bagID = 0, 4 do
+            for slotID = 1, GetContainerNumSlots(bagID) do
+                local quality,_,_,link = select(4,GetContainerItemInfo(bagID,slotID))
+                local itemID = GetContainerItemID(bagID,slotID)
+                local tooltipInfo = self:GetTooltipItemInfo(nil, bagID, slotID)
+                if tooltipInfo.isLocked then
+                    tinsert(inventoryItems,{bagID,slotID,link,quality,nil,itemID,"locked"})
+                elseif tooltipInfo.isUnlocked then
+                    tinsert(inventoryItems,{bagID,slotID,link,quality,nil,itemID,"unLocked"})
                 end
             end
         end
@@ -244,150 +471,3 @@ function PM:ItemMenuRegister(button)
     )
     dewdrop:Open(button)
 end
-
-------------------ScrollFrameTooltips---------------------------
-function PM:DeScrollFrameCreate()
-
-local function ItemTemplate_OnEnter(self)
-    if not self.link then return end
-    GameTooltip:SetOwner(self, "ANCHOR_RIGHT", -13, -50)
-    GameTooltip:SetHyperlink(self.link)
-    GameTooltip:Show()
-end
-
-local function ItemTemplate_OnLeave()
-    GameTooltip:Hide()
-end
-
---ScrollFrame
-
-local ROW_HEIGHT = 16   -- How tall is each row?
-local MAX_ROWS = 25      -- How many rows can be shown at once?
-
-
-    self.DeScrollFrame = CreateFrame("Frame", "", self.Extractframe)
-    local scrollFrame = self.DeScrollFrame
-        scrollFrame:EnableMouse(true)
-        scrollFrame:SetSize(self.Extractframe:GetWidth()-40, ROW_HEIGHT * MAX_ROWS + 16)
-        scrollFrame:SetPoint("TOP",0,-42)
-        scrollFrame:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 16,
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
-            insets = { left = 4, right = 4, top = 4, bottom = 4 },
-        })
-
-
-
-function PM:InventroyScrollFrameUpdate()
-    local maxValue = #inventoryItems
-	FauxScrollFrame_Update(scrollFrame.scrollBar, maxValue, MAX_ROWS, ROW_HEIGHT)
-	local offset = FauxScrollFrame_GetOffset(scrollFrame.scrollBar)
-	for i = 1, MAX_ROWS do
-		local value = i + offset
-        scrollFrame.rows[i]:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
-        scrollFrame.rows[i]:Hide()
-		if value <= maxValue then
-			local row = scrollFrame.rows[i]
-            local text1, text2 = self:GetPosibleMats(inventoryItems[value][4], inventoryItems[value][5])
-            row.Text:SetText(inventoryItems[value][3])
-            row.Text1:SetText(text1)
-            if text2 then
-                row.Text2:SetText(text2)
-            else
-                row.Text2:SetText("")
-            end
-            row.link = inventoryItems[value][3]
-			row.bag = inventoryItems[value][1]
-            row.slot = inventoryItems[value][2]
-            row:SetAttribute("type", "spell")
-            row:SetAttribute("spell", "Disenchant")
-            row:SetAttribute("target-bag", row.bag)
-            row:SetAttribute("target-slot", row.slot)
-            row.tNumber = value
-            row:Show()
-		end
-	end
-end
-
-local scrollSlider = CreateFrame("ScrollFrame","ProfessionMenuDEListFrameScroll",self.DeScrollFrame,"FauxScrollFrameTemplate")
-scrollSlider:SetPoint("TOPLEFT", 0, -8)
-scrollSlider:SetPoint("BOTTOMRIGHT", -30, 8)
-scrollSlider:SetScript("OnVerticalScroll", function(self, offset)
-    self.offset = math.floor(offset / ROW_HEIGHT + 0.5)
-    PM:InventroyScrollFrameUpdate()
-end)
-
-scrollFrame.scrollBar = scrollSlider
-
-local rows = setmetatable({}, { __index = function(t, i)
-	local row = CreateFrame("Button", "$parentRow"..i, scrollFrame, "SecureActionButtonTemplate")
-	row:SetSize(405, ROW_HEIGHT)
-	row:SetNormalFontObject(GameFontHighlightLeft)
-    row.Text = row:CreateFontString("$parentRow"..i.."Text","OVERLAY","GameFontNormal")
-    row.Text:SetSize(230, ROW_HEIGHT)
-    row.Text:SetPoint("LEFT",row)
-    row.Text:SetJustifyH("LEFT")
-    row.Text1 = row:CreateFontString("$parentRow"..i.."Text1","OVERLAY","GameFontNormal")
-    row.Text1:SetSize(180, ROW_HEIGHT)
-    row.Text1:SetPoint("LEFT",row,230,0)
-    row.Text1:SetJustifyH("LEFT")
-    row.Text2 = row:CreateFontString("$parentRow"..i.."Text2","OVERLAY","GameFontNormal")
-    row.Text2:SetSize(180, ROW_HEIGHT)
-    row.Text2:SetPoint("LEFT",row,390,0)
-    row.Text2:SetJustifyH("LEFT")
-    row:SetScript("OnShow", function(self)
-        if GameTooltip:GetOwner() == self:GetName() then
-            ItemTemplate_OnEnter(self)
-        end
-    end)
-    row:SetScript("OnMouseDown", function()
-        local itemID = GetItemInfoFromHyperlink(row.link)
-        local appearanceID = C_Appearance.GetItemAppearanceID(itemID)
-        if appearanceID and not C_AppearanceCollection.IsAppearanceCollected(appearanceID) then
-            C_AppearanceCollection.CollectItemAppearance(itemID)
-        end
-    end)
-    row:SetScript("OnEnter", function(self)
-        ItemTemplate_OnEnter(self)
-    end)
-    row:SetScript("OnLeave", ItemTemplate_OnLeave)
-	if i == 1 then
-		row:SetPoint("TOPLEFT", scrollFrame, 8, -8)
-	else
-		row:SetPoint("TOPLEFT", scrollFrame.rows[i-1], "BOTTOMLEFT")
-	end
-	rawset(t, i, row)
-	return row
-end })
-
-scrollFrame.rows = rows
-
---Shows a menu with options and sharing options
-local extractMenu = CreateFrame("Button", "ProfessionMenu_ExtractInterface_FilterMenu", self.DeScrollFrame, "FilterDropDownMenuTemplate")
-    extractMenu:SetSize(133, 30)
-    extractMenu:SetPoint("BOTTOMRIGHT", self.DeScrollFrame, "BOTTOMRIGHT", 0, -35)
-    extractMenu:RegisterForClicks("LeftButtonDown")
-    extractMenu:SetScript("OnClick", function(button)
-        self:ItemMenuRegister(button)
-    end)
---Shows a vendor all thats left button
-local vendorBttn = CreateFrame("Button", "ProfessionMenu_ExtractInterface_AutoVendor", self.DeScrollFrame, "OptionsButtonTemplate")
-    vendorBttn:SetSize(133, 30)
-    vendorBttn:SetPoint("BOTTOMLEFT", self.DeScrollFrame, "BOTTOMLEFT", 0, -35)
-    vendorBttn:RegisterForClicks("LeftButtonDown")
-    vendorBttn:SetText("Vendor All")
-    vendorBttn:SetScript("OnClick", function(button)
-        if not PROFESSIONMENU.inventoryItems then return end
-        for _,item in pairs(PROFESSIONMENU.inventoryItems) do
-            local appearanceID = C_Appearance.GetItemAppearanceID(item[6])
-            if appearanceID and not C_AppearanceCollection.IsAppearanceCollected(appearanceID) then
-                C_AppearanceCollection.CollectItemAppearance(item[6])
-            end
-            PickupContainerItem(item[1], item[2])
-            PickupMerchantItem(0)
-         end
-    end)
-
-end
-
-PM:DeScrollFrameCreate()

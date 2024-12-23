@@ -24,7 +24,7 @@ PM.profList = {
         7413, -- Expert 225
         7412, -- Journeyman 150
         7411, -- Apprentice 75
-        frame = {_G["PROFESSIONMENU"]["Extractframe"], "Enchanting", "Right click to open disenchanting frame"}
+        rightClick = {_G["PROFESSIONMENU"]["Extractframe"], "Enchanting", "Left click to open Enchanting interface Right click to open the disenchanting interface"}
     }, --ENCHANTING
     {
         51306, -- Grand Master 450
