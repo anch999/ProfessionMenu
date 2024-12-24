@@ -20,6 +20,7 @@
 
 <Script file="ProfessionMenu.lua"/>
 <Script file="ProfessionInfo.lua"/>
+<Script file="ButtonUI.lua"/>
 <Script file="Utils.lua"/>
 <Script file="Minimap.lua"/>
 <Script file="InventoryFrame.lua"/>
