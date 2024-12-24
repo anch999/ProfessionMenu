@@ -25,16 +25,12 @@ function PM:InitializeInventoryUI()
     self.InventoryFrame:SetScript("OnShow", function()
         if self.InventoryFrame.profession == "Enchanting" then
             self.InventoryFrame.TitleText:SetText("Disenchanting List")
-            self.InventoryFrame.vendorBttn:Show()
             self.InventoryFrame.filterMenu:Show()
-            self.InventoryFrame.moneyFrame:Show()
             self.InventoryFrame.openFirstBtn:Hide()
             self:SearchBags()
         elseif self.InventoryFrame.profession == "Lockpicking" then
             self.InventoryFrame.TitleText:SetText("Lockpicking List")
-            self.InventoryFrame.vendorBttn:Hide()
             self.InventoryFrame.filterMenu:Hide()
-            self.InventoryFrame.moneyFrame:Hide()
             self.InventoryFrame.openFirstBtn:Show()
             self:SearchBagsLockboxs()
         end
@@ -180,8 +176,17 @@ function PM:InitializeInventoryUI()
     end })
 
     self.DeScrollFrame.rows = rows
+    
+    --Shows a menu with options and sharing options
+    self.InventoryFrame.filterMenu = CreateFrame("Button", "ProfessionMenu_InventoryFrameFilterMenu", self.InventoryFrame, "FilterDropDownMenuTemplate")
+    self.InventoryFrame.filterMenu:SetSize(133, 30)
+    self.InventoryFrame.filterMenu:SetPoint("BOTTOMRIGHT", self.DeScrollFrame, "BOTTOMRIGHT", 0, -35)
+    self.InventoryFrame.filterMenu:RegisterForClicks("LeftButtonDown")
+    self.InventoryFrame.filterMenu:SetScript("OnClick", function(button)
+        self:ItemMenuRegister(button)
+    end)
 
-	self.InventoryFrame.moneyFrame = CreateFrame("Frame", "ProfessionMenu_InventoryFramePrice", self.InventoryFrame, "MoneyInputFrameTemplate")
+	self.InventoryFrame.moneyFrame = CreateFrame("Frame", "ProfessionMenu_InventoryFramePrice", self.InventoryFrame.filterMenu, "MoneyInputFrameTemplate")
 	self.InventoryFrame.moneyFrame:SetPoint("TOP", self.DeScrollFrame, "BOTTOM", 20, -10)
 	self.InventoryFrame.moneyFrame:SetScript("OnShow", function()
 		MoneyInputFrame_SetCopper(ProfessionMenu_InventoryFramePrice,self.db.Gold)
@@ -190,7 +195,7 @@ function PM:InitializeInventoryUI()
 			self.db.Gold = MoneyInputFrame_GetCopper(self.InventoryFrame.moneyFrame)
 		end)
 
-    self.InventoryFrame.moneyEnable = CreateFrame("CheckButton", "ProfessionMenu_InventoryFramePriceCheck", self.InventoryFrame, "UICheckButtonTemplate")
+    self.InventoryFrame.moneyEnable = CreateFrame("CheckButton", "ProfessionMenu_InventoryFramePriceCheck", self.InventoryFrame.filterMenu, "UICheckButtonTemplate")
     self.InventoryFrame.moneyEnable:SetPoint("RIGHT", self.InventoryFrame.moneyFrame, "LEFT", -10, -1)
     self.InventoryFrame.moneyEnable:SetScript("OnShow", function()
         self.InventoryFrame.moneyEnable:SetChecked(self.db.GoldFilter)
@@ -206,16 +211,8 @@ function PM:InitializeInventoryUI()
     end)
     self.InventoryFrame.moneyEnable:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    --Shows a menu with options and sharing options
-    self.InventoryFrame.filterMenu = CreateFrame("Button", "ProfessionMenu_InventoryFrameFilterMenu", self.InventoryFrame, "FilterDropDownMenuTemplate")
-    self.InventoryFrame.filterMenu:SetSize(133, 30)
-    self.InventoryFrame.filterMenu:SetPoint("BOTTOMRIGHT", self.DeScrollFrame, "BOTTOMRIGHT", 0, -35)
-    self.InventoryFrame.filterMenu:RegisterForClicks("LeftButtonDown")
-    self.InventoryFrame.filterMenu:SetScript("OnClick", function(button)
-        self:ItemMenuRegister(button)
-    end)
     --Shows a vendor all thats left button
-    self.InventoryFrame.vendorBttn = CreateFrame("Button", "ProfessionMenu_InventoryFrameVendorButton", self.InventoryFrame, "OptionsButtonTemplate")
+    self.InventoryFrame.vendorBttn = CreateFrame("Button", "ProfessionMenu_InventoryFrameVendorButton", self.InventoryFrame.filterMenu, "OptionsButtonTemplate")
     self.InventoryFrame.vendorBttn:SetSize(133, 30)
     self.InventoryFrame.vendorBttn:SetPoint("BOTTOMLEFT", self.DeScrollFrame, "BOTTOMLEFT", 0, -35)
     self.InventoryFrame.vendorBttn:RegisterForClicks("LeftButtonDown")
