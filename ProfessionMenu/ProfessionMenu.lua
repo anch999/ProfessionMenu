@@ -68,11 +68,8 @@ function PM:SlashCommand(msg)
 end
 
 function PM:UNIT_SPELLCAST_SUCCEEDED(event, arg1, arg2)
-    if self.InventoryFrame:IsVisible() and self.InventoryFrame.profession == "Lockpicking" then
-        self:ScheduleTimer(function()
-            self:SearchBagsLockboxs()
-            self:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-        end, .5)
+    if arg2 == "Pick Lock" and self.InventoryFrame:IsVisible() and self.InventoryFrame.profession == "Lockpicking" then
+        Timer.After(.2, function() self:SearchBagsLockboxs() end)
     end
 	self:RemoveItem(arg2)
 end

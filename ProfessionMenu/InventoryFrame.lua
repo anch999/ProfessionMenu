@@ -35,10 +35,12 @@ function PM:InitializeInventoryUI()
             self:SearchBagsLockboxs()
         end
         self:RegisterEvent("BAG_UPDATE")
+        self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
     end)
     self.InventoryFrame:SetScript("OnHide", function()
         self.InventoryFrame.profession = nil
         self:UnregisterEvent("BAG_UPDATE")
+        self:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
     end)
     self.InventoryFrame.TitleText = self.InventoryFrame:CreateFontString()
     self.InventoryFrame.TitleText:SetFont("Fonts\\FRIZQT__.TTF", 12)
@@ -160,7 +162,6 @@ function PM:InitializeInventoryUI()
             if appearanceID and not C_AppearanceCollection.IsAppearanceCollected(appearanceID) then
                 C_AppearanceCollection.CollectItemAppearance(itemID)
             end
-            self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
         end)
         row:SetScript("OnEnter", function(self)
             ItemTemplate_OnEnter(self)
@@ -176,7 +177,7 @@ function PM:InitializeInventoryUI()
     end })
 
     self.DeScrollFrame.rows = rows
-    
+
     --Shows a menu with options and sharing options
     self.InventoryFrame.filterMenu = CreateFrame("Button", "ProfessionMenu_InventoryFrameFilterMenu", self.InventoryFrame, "FilterDropDownMenuTemplate")
     self.InventoryFrame.filterMenu:SetSize(133, 30)
@@ -239,8 +240,8 @@ function PM:InitializeInventoryUI()
     self.InventoryFrame.openFirstBtn = CreateFrame("Button", "ProfessionMenu_InventoryFrameVendorButton", self.InventoryFrame, "OptionsButtonTemplate,SecureActionButtonTemplate")
     self.InventoryFrame.openFirstBtn:SetSize(133, 30)
     self.InventoryFrame.openFirstBtn:SetPoint("BOTTOMLEFT", self.DeScrollFrame, "BOTTOMLEFT", 0, -35)
-    self.InventoryFrame.openFirstBtn:RegisterForClicks("LeftButtonDown")
     self.InventoryFrame.openFirstBtn:SetText("Unlock/Open First")
+    self.InventoryFrame.openFirstBtn:SetScript("OnShow", function() self.InventoryFrame.openFirstBtn:Enable() end)
     self.InventoryFrame.openFirstBtn:SetScript("OnEnter", function(button)
         local firstButton = self.InventoryFrame.firstButton
         if not firstButton then return end
@@ -254,6 +255,11 @@ function PM:InitializeInventoryUI()
             button:SetAttribute("item", firstButton.bag.." "..firstButton.slot)
         end
     end)
+    self.InventoryFrame.openFirstBtn:SetScript("OnMouseDown", function()
+            if inventoryItems and #inventoryItems > 0 then
+                Timer.After(.2, function() self.InventoryFrame.openFirstBtn:Disable() end)
+            end
+        end)
 
     --Add the ProfessionMenu Extract Frame to the special frames tables to enable closing wih the ESC key
     tinsert(UISpecialFrames, "ProfessionMenuExtractFrame")
@@ -364,9 +370,9 @@ end
 
 function PM:BAG_UPDATE()
     if self.InventoryFrame.profession == "Enchanting" then
-        self:ScheduleTimer(function() self:SearchBags() end, .10)
+        Timer.After(.10, function() self:SearchBags() end)
     elseif self.InventoryFrame.profession == "Lockpicking" then
-        self:ScheduleTimer(function() self:SearchBagsLockboxs() end, .10)
+        Timer.After(.10, function() self:SearchBagsLockboxs() end)
     end
 end
 
@@ -425,6 +431,7 @@ function PM:SearchBagsLockboxs()
         self.bagThrottle = self:ScheduleTimer(function() bagThrottle = false end, .1)
         self:InventroyScrollFrameUpdate()
         self.inventoryItems = inventoryItems
+        self.InventoryFrame.openFirstBtn:Enable()
     end
 end
 

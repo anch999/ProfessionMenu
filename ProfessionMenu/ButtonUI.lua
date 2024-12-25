@@ -259,90 +259,90 @@ end
 end
 
 function PM:InitializeStandaloneButton()
---Creates the main interface
-self.standaloneButton = CreateFrame("Button", "ProfessionMenuFrame", UIParent, nil)
-self.standaloneButton:SetSize(70,70)
-self.standaloneButton:EnableMouse(true)
-self.standaloneButton:SetScript("OnDragStart", function() self.standaloneButton:StartMoving() end)
-self.standaloneButton:SetScript("OnDragStop", function()
-    self.standaloneButton:StopMovingOrSizing()
-    self.db.menuPos = {self.standaloneButton:GetPoint()}
-    self.db.menuPos[2] = "UIParent"
-end)
-self.standaloneButton:SetScript("OnShow", function()
-    self.standaloneButton.icon:Show()
-    self.standaloneButton.Text:Show()
-end)
-self.standaloneButton:SetScript("OnHide", function()
-    self.standaloneButton.icon:Hide()
-    self.standaloneButton.Text:Hide()
-end)
+    --Creates the main interface
+    self.standaloneButton = CreateFrame("Button", "ProfessionMenuFrame", UIParent, nil)
+    self.standaloneButton:SetSize(70,70)
+    self.standaloneButton:EnableMouse(true)
+    self.standaloneButton:SetScript("OnDragStart", function() self.standaloneButton:StartMoving() end)
+    self.standaloneButton:SetScript("OnDragStop", function()
+        self.standaloneButton:StopMovingOrSizing()
+        self.db.menuPos = {self.standaloneButton:GetPoint()}
+        self.db.menuPos[2] = "UIParent"
+    end)
+    self.standaloneButton:SetScript("OnShow", function()
+        self.standaloneButton.icon:Show()
+        self.standaloneButton.Text:Show()
+    end)
+    self.standaloneButton:SetScript("OnHide", function()
+        self.standaloneButton.icon:Hide()
+        self.standaloneButton.Text:Hide()
+    end)
 
-self.standaloneButton:SetMovable(true)
-self.standaloneButton:RegisterForClicks("LeftButtonDown", "RightButtonDown")
-self.standaloneButton.icon = self.standaloneButton:CreateTexture(nil, "ARTWORK")
-self.standaloneButton.icon:SetSize(55,55)
-self.standaloneButton.icon:SetPoint("CENTER", self.standaloneButton,"CENTER",0,0)
-self.standaloneButton.icon:SetTexture(self.defaultIcon)
-self.standaloneButton.Text = self.standaloneButton:CreateFontString()
-self.standaloneButton.Text:SetFont("Fonts\\FRIZQT__.TTF", 13)
-self.standaloneButton.Text:SetFontObject(GameFontNormal)
-self.standaloneButton.Text:SetText("|cffffffffProf\nMenu")
-self.standaloneButton.Text:SetPoint("CENTER", self.standaloneButton.icon, "CENTER", 0, 0)
-self.standaloneButton.Highlight = self.standaloneButton:CreateTexture(nil, "OVERLAY")
-self.standaloneButton.Highlight:SetSize(70,70)
-self.standaloneButton.Highlight:SetPoint("CENTER", self.standaloneButton, 0, 0)
-self.standaloneButton.Highlight:SetTexture("Interface\\AddOns\\AwAddons\\Textures\\EnchOverhaul\\Slot2Selected")
-self.standaloneButton.Highlight:Hide()
-self.standaloneButton:Hide()
-self.standaloneButton:SetScript("OnClick", function(button, btnclick)
-    if btnclick == "RightButton" and  self.standaloneButton.unlocked then
-        self:UnlockFrame()
-    elseif not self.standaloneButton.unlocked then
-        if not self.db.autoMenu then
-            self:DewdropRegister(button, true)
+    self.standaloneButton:SetMovable(true)
+    self.standaloneButton:RegisterForClicks("LeftButtonDown", "RightButtonDown")
+    self.standaloneButton.icon = self.standaloneButton:CreateTexture(nil, "ARTWORK")
+    self.standaloneButton.icon:SetSize(55,55)
+    self.standaloneButton.icon:SetPoint("CENTER", self.standaloneButton,"CENTER",0,0)
+    self.standaloneButton.icon:SetTexture(self.defaultIcon)
+    self.standaloneButton.Text = self.standaloneButton:CreateFontString()
+    self.standaloneButton.Text:SetFont("Fonts\\FRIZQT__.TTF", 13)
+    self.standaloneButton.Text:SetFontObject(GameFontNormal)
+    self.standaloneButton.Text:SetText("|cffffffffProf\nMenu")
+    self.standaloneButton.Text:SetPoint("CENTER", self.standaloneButton.icon, "CENTER", 0, 0)
+    self.standaloneButton.Highlight = self.standaloneButton:CreateTexture(nil, "OVERLAY")
+    self.standaloneButton.Highlight:SetSize(70,70)
+    self.standaloneButton.Highlight:SetPoint("CENTER", self.standaloneButton, 0, 0)
+    self.standaloneButton.Highlight:SetTexture("Interface\\AddOns\\AwAddons\\Textures\\EnchOverhaul\\Slot2Selected")
+    self.standaloneButton.Highlight:Hide()
+    self.standaloneButton:Hide()
+    self.standaloneButton:SetScript("OnClick", function(button, btnclick)
+        if btnclick == "RightButton" and  self.standaloneButton.unlocked then
+            self:UnlockFrame()
+        elseif not self.standaloneButton.unlocked then
+            if not self.db.autoMenu then
+                self:DewdropRegister(button, true)
+            end
         end
-    end
-end)
+    end)
 
-self.standaloneButton:SetScript("OnEnter", function(button)
-    if self.standaloneButton.unlocked then
-        GameTooltip:SetOwner(button, "ANCHOR_TOP")
-        GameTooltip:AddLine("Left click to drag")
-        GameTooltip:AddLine("Right click to lock frame")
-        GameTooltip:Show()
-    else
-        self:OnEnter(button, true)
-        self.standaloneButton.Highlight:Show()
-    end
-    if self.db.ShowMenuOnHover then
-        self.standaloneButton:SetAlpha(10)
-    end
-end)
-
-self.standaloneButton:SetScript("OnLeave", function()
-    if not self.standaloneButton.unlocked  then
-        self.standaloneButton.Highlight:Hide()
-        GameTooltip:Hide()
+    self.standaloneButton:SetScript("OnEnter", function(button)
+        if self.standaloneButton.unlocked then
+            GameTooltip:SetOwner(button, "ANCHOR_TOP")
+            GameTooltip:AddLine("Left click to drag")
+            GameTooltip:AddLine("Right click to lock frame")
+            GameTooltip:Show()
+        else
+            self:OnEnter(button, true)
+            self.standaloneButton.Highlight:Show()
+        end
         if self.db.ShowMenuOnHover then
-            self.standaloneButton:SetAlpha(0)
+            self.standaloneButton:SetAlpha(10)
         end
+    end)
+
+    self.standaloneButton:SetScript("OnLeave", function()
+        if not self.standaloneButton.unlocked  then
+            self.standaloneButton.Highlight:Hide()
+            GameTooltip:Hide()
+            if self.db.ShowMenuOnHover then
+                self.standaloneButton:SetAlpha(0)
+            end
+        end
+    end)
+
+    if self.db.menuPos then
+        self.standaloneButton:ClearAllPoints()
+        self.standaloneButton:SetPoint(unpack(self.db.menuPos))
+    else
+        self.standaloneButton:ClearAllPoints()
+        self.standaloneButton:SetPoint("CENTER", UIParent)
     end
-end)
 
-if self.db.menuPos then
-    self.standaloneButton:ClearAllPoints()
-    self.standaloneButton:SetPoint(unpack(self.db.menuPos))
-else
-    self.standaloneButton:ClearAllPoints()
-    self.standaloneButton:SetPoint("CENTER", UIParent)
-end
+    self:SetFrameAlpha()
 
-self:SetFrameAlpha()
-
-if not self.db.HideMenu then
-    self.standaloneButton:Show()
-end
+    if not self.db.HideMenu then
+        self.standaloneButton:Show()
+    end
 
 end
 

@@ -61,7 +61,9 @@ function PM:RemoveItem(arg2)
             end
         end
 	end
-	self:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    if not self.InventoryFrame:IsVisible() then
+	    self:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    end
 end
 
 function PM:ReturnItemIDs()
