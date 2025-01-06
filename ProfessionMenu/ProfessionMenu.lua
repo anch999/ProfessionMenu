@@ -7,22 +7,22 @@ local WHITE = "|cffFFFFFF"
 
 --Set Savedvariables defaults
 local DefaultSettings  = {
-    ShowMenuOnHover = { false },
-    HideMenu = { false },
-    DeleteItem = { false },
-    minimap = { false },
-    txtSize = { 12 },
-    autoMenu = { false },
-    FilterList = { {false,false,false,false,false} },
-    BagFilter = { {false,false,false,false,false} },
-    ItemBlacklist = { { [9149] = true }},
-    hideMaxRank = { false },
-    hideRank = { false },
-    showHerb = { false },
-    ShowOldTradeSkillUI = { false },
-    selfCast = { false },
-    Gold = { 55000 },
-    GoldFilter = { false }
+    ShowMenuOnHover = false,
+    HideMenu = false,
+    DeleteItem = false,
+    minimap = false,
+    txtSize = 12,
+    autoMenu = false,
+    FilterList = {false,false,false,false,false},
+    BagFilter = {false,false,false,false,false},
+    ItemBlacklist = { [9149] = true },
+    hideMaxRank = false,
+    hideRank = false,
+    showHerb = false,
+    ShowOldTradeSkillUI = false,
+    selfCast = false,
+    Gold = 55000,
+    GoldFilter = false
 }
 
 function PM:OnInitialize()

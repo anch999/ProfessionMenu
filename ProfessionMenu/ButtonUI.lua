@@ -315,7 +315,7 @@ function PM:InitializeStandaloneButton()
             self:OnEnter(button, true)
             self.standaloneButton.Highlight:Show()
         end
-        if self.db.ShowMenuOnHover then
+        if self.db.ShowMenuOnHover and not UnitAffectingCombat("player") then
             self.standaloneButton:SetAlpha(10)
         end
     end)

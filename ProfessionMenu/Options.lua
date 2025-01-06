@@ -127,15 +127,4 @@ function PM:InitializeOptionsUI()
 	}
 
 	self.options = self:CreateOptionsPages(Options, ProfessionMenuDB)
-	self.options.discordLink = CreateFrame("Button", "ProfessionMenuOptions_DiscordLink", ProfessionMenuOptionsFrame)
-	self.options.discordLink:SetPoint("BOTTOMLEFT", 15, 15)
-	self.options.discordLink.Lable = self.options.discordLink:CreateFontString(nil , "BORDER", "GameFontNormal")
-	self.options.discordLink.Lable:SetJustifyH("LEFT")
-	self.options.discordLink.Lable:SetPoint("LEFT", self.options.discordLink, 0, 0)
-	self.options.discordLink.Lable:SetText("For Help or suggestions come join us on Discord\nhttps://discord.gg/j7eebTK5Q3"..WHITE.." (Click to copy link)")
-	self.options.discordLink:SetScript("OnClick", function()
-		Internal_CopyToClipboard("https://discord.gg/j7eebTK5Q3")
-		DEFAULT_CHAT_FRAME:AddMessage("Discord link copyed to clipboard")
-	end)
-	self.options.discordLink:SetSize(self.options.discordLink.Lable:GetStringWidth(), self.options.discordLink.Lable:GetStringHeight())
 end
