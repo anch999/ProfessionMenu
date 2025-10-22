@@ -19,7 +19,6 @@ local DefaultSettings  = {
     hideMaxRank = false,
     hideRank = false,
     showHerb = false,
-    ShowOldTradeSkillUI = false,
     selfCast = false,
     Gold = 55000,
     GoldFilter = false
@@ -40,10 +39,6 @@ function PM:OnEnable()
     self:InitializeMinimap()
     self:InitializeStandaloneButton()
     self:InitializeInventoryUI()
-    if self.db.ShowOldTradeSkillUI then
-        UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
-        self:RegisterEvent("TRADE_SKILL_SHOW")
-    end
 end
 
 --[[

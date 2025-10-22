@@ -70,21 +70,6 @@ function PM:InitializeOptionsUI()
 				Lable = "Cast placeable items/spells on self",
 				OnClick = function() self.db.selfCast = not self.db.selfCast end
 			},
---[[ 			{
-				Type = "CheckButton",
-				Name = "ShowOldTradeSkillUI",
-				Lable = "Show old Blizzard Trade Skill UI",
-				OnClick = function()
-					self.db.ShowOldTradeSkillUI = not self.db.ShowOldTradeSkillUI
-					if self.db.ShowOldTradeSkillUI then
-						UIParent:UnregisterEvent("TRADE_SKILL_SHOW")
-						self:RegisterEvent("TRADE_SKILL_SHOW")
-					else
-						self:UnregisterEvent("TRADE_SKILL_SHOW")
-						UIParent:RegisterEvent("TRADE_SKILL_SHOW")
-					end
-				end
-			}, ]]
 		},
 		Right = {
 			{
