@@ -2,8 +2,8 @@
 ## Title: ProfessionMenu
 ## Notes: Adds a movable button to the UI that when clicked opens a dropdown with all of your professions, and any Ascension specific profession utilities you may own.
 ## Author: Anch
-## SavedVariables: ProfessionMenu
-## SavedVariablesPerCharacter: ProfessionMenuDB
+## SavedVariables: ProfessionMenuDB
+## SavedVariablesPerCharacter: ProfessionMenuCharDB
 ## X-Category: Profession
 ## X-OptionsFrame: ProfessionMenuOptionsFrame
 ## X-Discord: https://discord.gg/j7eebTK5Q3

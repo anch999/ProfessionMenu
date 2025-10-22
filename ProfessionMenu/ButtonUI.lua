@@ -1,14 +1,4 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
-local dewdrop = AceLibrary("Dewdrop-2.0")
-local GREY = "|cff999999"
-local RED = "|cffff0000"
-local WHITE = "|cffFFFFFF"
-local GREEN = "|cff1eff00"
-local LIMEGREEN = "|cFF32CD32"
-local BLUE = "|cff0070dd"
-local ORANGE = "|cffFF8400"
-local YELLOW = "|cffFFd200"
-
 
 -- add altar summon button via dewdrop secure
 function PM:AddItem(itemID)
@@ -270,8 +260,8 @@ function PM:InitializeStandaloneButton()
     self.standaloneButton:SetScript("OnDragStart", function() self.standaloneButton:StartMoving() end)
     self.standaloneButton:SetScript("OnDragStop", function()
         self.standaloneButton:StopMovingOrSizing()
-        self.db.menuPos = {self.standaloneButton:GetPoint()}
-        self.db.menuPos[2] = "UIParent"
+        self.charDb.menuPos = {self.standaloneButton:GetPoint()}
+        self.charDb.menuPos[2] = "UIParent"
     end)
     self.standaloneButton:SetScript("OnShow", function()
         self.standaloneButton.icon:Show()
@@ -334,9 +324,9 @@ function PM:InitializeStandaloneButton()
         end
     end)
 
-    if self.db.menuPos then
+    if self.charDb.menuPos then
         self.standaloneButton:ClearAllPoints()
-        self.standaloneButton:SetPoint(unpack(self.db.menuPos))
+        self.standaloneButton:SetPoint(unpack(self.charDb.menuPos))
     else
         self.standaloneButton:ClearAllPoints()
         self.standaloneButton:SetPoint("CENTER", UIParent)

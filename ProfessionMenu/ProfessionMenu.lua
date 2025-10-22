@@ -26,6 +26,7 @@ local DefaultSettings  = {
 
 function PM:OnInitialize()
     self.db = self:SetupDB("ProfessionMenuDB", DefaultSettings)
+    self.charDb = self:SetupDB("ProfessionMenuCharDB", {})
     --Enable the use of /PM or /PROFESSIONMENU to open the loot browser
     SLASH_PROFESSIONMENU1 = "/PROFESSIONMENU"
     SLASH_PROFESSIONMENU2 = "/PM"
@@ -48,7 +49,7 @@ If someone types /mysticextended, bring up the options box
 ]]
 function PM:SlashCommand(msg)
     if msg == "reset" then
-        ProfessionMenuDB = nil
+        ProfessionMenu = nil
         self.standaloneButton:ClearAllPoints()
         self.standaloneButton:SetPoint("CENTER", UIParent)
         self:OnInitialize()

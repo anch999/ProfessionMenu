@@ -111,5 +111,5 @@ function PM:InitializeOptionsUI()
 		}
 	}
 
-	self.options = self:CreateOptionsPages(Options, ProfessionMenuDB)
+	self.options = self:CreateOptionsPages(Options, ProfessionMenu)
 end
