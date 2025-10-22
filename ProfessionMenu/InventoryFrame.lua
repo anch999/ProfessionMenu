@@ -1,13 +1,7 @@
 local PM = LibStub("AceAddon-3.0"):GetAddon("ProfessionMenu")
 local dewdrop = AceLibrary("Dewdrop-2.0")
-local GREY = "|cff999999"
 local RED = "|cffff0000"
-local WHITE = "|cffFFFFFF"
 local GREEN = "|cff1eff00"
-local LIMEGREEN = "|cFF32CD32"
-local BLUE = "|cff0070dd"
-local ORANGE = "|cffFF8400"
-local YELLOW = "|cffFFd200"
 
 local inventoryItems
 local bagThrottle = false
