@@ -222,15 +222,19 @@ self.dewdrop:Register(button,
     'dontHook', true
 )
 self.dewdrop:Open(button)
-local hook
-if not hook then
-    WorldFrame:HookScript("OnEnter", function()
-        if self.dewdrop:IsOpen(button) then
-            self.dewdrop:Close()
-        end
-    end)
-    hook = true
-end
+
+local worldFrameHook
+    if not worldFrameHook then
+      WorldFrame:HookScript("OnEnter", function()
+        Timer.After(.5, function()
+          local mFocus = GetMouseFocus()
+          if self.dewdrop:IsOpen(button) and (mFocus == WorldFrame or mFocus ~= button) then
+              self.dewdrop:Close()
+          end
+        end)
+      end)
+      worldFrameHook = true
+    end
 
 GameTooltip:Hide()
 end
