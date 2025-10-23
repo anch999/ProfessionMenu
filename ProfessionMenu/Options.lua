@@ -14,6 +14,7 @@ function PM:InitializeOptionsUI()
 	local Options = {
 		AddonName = "ProfessionMenu",
 		TitleText = "Profession Menu",
+		About = true,
 		{
 		Name = "Profession Menu Settings",
 		Left = {
@@ -81,7 +82,7 @@ function PM:InitializeOptionsUI()
 			{
 				Type = "CheckButton",
 				Name = "minimap",
-				Lable = "Hide minimap icon",
+				Lable = "Show minimap icon",
 				OnClick = function()
 					self:ToggleMinimap()
 				end
@@ -111,5 +112,5 @@ function PM:InitializeOptionsUI()
 		}
 	}
 
-	self.options = self:CreateOptionsPages(Options, ProfessionMenu)
+	self.options = self:CreateOptionsPages(Options, ProfessionMenuDB)
 end

@@ -8,6 +8,6 @@
 ## X-OptionsFrame: ProfessionMenuOptionsFrame
 ## X-Discord: https://discord.gg/j7eebTK5Q3
 ## DefaultState: enabled
-## Version: 1.8.9
+## Version: 1.8.10
 
 embeds.xml
