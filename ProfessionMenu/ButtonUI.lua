@@ -218,7 +218,7 @@ local worldFrameHook
       WorldFrame:HookScript("OnEnter", function()
         Timer.After(.5, function()
           local mFocus = GetMouseFocus()
-          if self.dewdrop:IsOpen(button) and (mFocus == WorldFrame or mFocus ~= button) then
+          if self.dewdrop:IsOpen(button) and mFocus == WorldFrame then
               self.dewdrop:Close()
           end
         end)
