@@ -17,22 +17,53 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # Fetch tags to get the message
+        # Fetch tags to get the message and commit history
         with:
           fetch-depth: 0 
 
-      - name: Get Tag Message for Release Notes
-        id: get_tag_message
+      - name: Get Commit Log for Release Notes ✨
+        id: get_release_notes
         run: |
-          # Get the tag message and write it to a temporary file
-          tag_message=$(git tag -n99 --format="%(contents)" "${{ github.ref_name }}" | head -n 1)
+          # 1. Get the current tag (new version)
+          CURRENT_TAG="${{ github.ref_name }}"
+          echo "Current Tag: $CURRENT_TAG"
+
+          # 2. Get the previous tag (the one before the current one)
+          # 'git describe --tags --abbrev=0 $CURRENT_TAG^' finds the tag of the commit *before* the current tag's commit.
+          # This works for both annotated and lightweight tags.
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 "$CURRENT_TAG^")
           
-          # Create a file for the release body
-          echo "${tag_message}" > RELEASE_BODY.md
+          # Fallback for the very first release
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found. Using all commits."
+            PREVIOUS_TAG="$(git rev-list --max-parents=0 HEAD)" # Use initial commit hash
+          fi
+          echo "Previous Tag: $PREVIOUS_TAG"
+
+          # 3. Get the annotated tag message (if it exists)
+          TAG_MESSAGE=$(git tag -n99 --format="%(contents)" "$CURRENT_TAG" | head -n 1)
+
+          # 4. Generate the commit log between the two tags
+          # --no-merges: exclude merge commits for cleaner notes
+          # --pretty=format: customize the output format
+          COMMIT_LOG=$(git log "$PREVIOUS_TAG".."$CURRENT_TAG" \
+            --no-merges \
+            --pretty=format:"* **%s** (%h) - @%an")
+
+          # 5. Assemble the final release body
+          # Use the annotated tag message as the main description, followed by the commit list.
+          {
+            echo "$TAG_MESSAGE"
+            echo ""
+            echo "---"
+            echo "### 📝 Changes in this release"
+            echo ""
+            echo "$COMMIT_LOG"
+          } > RELEASE_BODY.md
           
           # Pass the file path as an output
           echo "release_body_file=RELEASE_BODY.md" >> "$GITHUB_OUTPUT"
-          echo "📝 Extracted tag message to RELEASE_BODY.md"
+          echo "✅ Generated RELEASE_BODY.md with commit log"
 
 
       - name: Prepare release zip
@@ -40,30 +71,7 @@ jobs:
         run: |
           version="${{ github.ref_name }}"
           
-          zip_name="${{ env.ZIP_FILE_NAME }}-v${version}.zip"
+          zip_name="${{ env.ZIP_FILE_NAME }}-${{ github.event_name == 'push' && 'v' || '' }}${version}.zip"
           echo "Preparing zip for $ADDON_NAME -> $zip_name"
           
-          # Use rsync to copy only the necessary addon folders
-          rsync -av --exclude='.git' --exclude='.github' --exclude='*.zip' \
-            ProfessionMenu \
-            "./temp_build/"
-          
-          # Navigate into the temporary build directory to zip the addon folder
-          cd ./temp_build
-          zip -r "../${zip_name}" .
-          cd ..
-          
-          # Set the variables as outputs
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "zip_name=${zip_name}" >> "$GITHUB_OUTPUT"
-          echo "✅ Created ${zip_name}"
-
-      - name: Create GitHub Release and Upload Zip
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.prepare_zip.outputs.version }}
-          name: ${{ env.ADDON_NAME }} ${{ steps.prepare_zip.outputs.version }}
-          files: |
-            ${{ steps.prepare_zip.outputs.zip_name }}
-          # 💡 New: Use the file created by the previous step as the release body
-          body_path: ${{ steps.get_tag_message.outputs.release_body_file }}
+          # Use rsync to
