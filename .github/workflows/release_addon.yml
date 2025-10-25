@@ -29,7 +29,7 @@ jobs:
 
           # 1. Find all tags, sort them by commit date, and get the second-to-last one.
           # The -v and head -n 2 removes the first line (the current tag).
-          PREVIOUS_TAG=$(git tag --sort=-committerdate | grep -E '^([0-9]+\.){2}[0-9]+$' | head -n 2 | tail -n 1)
+          PREVIOUS_TAG=$(git tag --sort=-committerdate | grep -E '^([vV]?[0-9]+\.){2}[0-9]+$' | head -n 2 | tail -n 1)
           
           # 2. Set fallback for the very first release
           if [ -z "$PREVIOUS_TAG" ]; then
