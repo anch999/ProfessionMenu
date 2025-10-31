@@ -30,7 +30,7 @@ jobs:
           # 1. List ALL tags, sort by tag creation date (newest first), and get the second entry.
           # This should reliably be the tag immediately preceding the current one.
           # The '--list' is often needed to force the sort.
-          PREVIOUS_TAG=$(git tag --sort=-taggerdate --list | head -n 2 | tail -n 1)
+          PREVIOUS_TAG=$(git tag --sort=-taggerdate --list | head -n 1 | tail -n 1)
           
           # 2. Set fallback for the very first release
           if [ -z "$PREVIOUS_TAG" ]; then
