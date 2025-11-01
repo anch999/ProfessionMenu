@@ -45,23 +45,23 @@ jobs:
 
           # 4. Generate the commit log between the two tags
           # This uses the tag names found in steps 1 & 2.
-          COMMIT_LOG=$(git log "$PREVIOUS_TAG".."$CURRENT_TAG" \
+            COMMIT_LOG=$(git log "$PREVIOUS_TAG".."$CURRENT_TAG" \
             --no-merges \
-            --pretty=format:"* **%s** (`%h`) - @%an")
+            --pretty=format:"* **%s** (`%h`)")
 
-          # 5. Assemble the final release body (Tag Message + Commit Log)
-          {
+            # 5. Assemble the final release body (Tag Message + Commit Log)
+            {
             echo "$TAG_MESSAGE"
             echo ""
             echo "---"
             echo "### 📝 Changes Since $PREVIOUS_TAG"
             echo ""
             echo "$COMMIT_LOG"
-          } > RELEASE_BODY.md
-          
-          # Pass the file path as an output
-          echo "release_body_file=RELEASE_BODY.md" >> "$GITHUB_OUTPUT"
-          echo "✅ Generated RELEASE_BODY.md with commit log from $PREVIOUS_TAG"
+            } > RELEASE_BODY.md
+            
+            # Pass the file path as an output
+            echo "release_body_file=RELEASE_BODY.md" >> "$GITHUB_OUTPUT"
+            echo "✅ Generated RELEASE_BODY.md with commit log from $PREVIOUS_TAG"
 
 
       - name: Prepare release zip
@@ -73,9 +73,14 @@ jobs:
           echo "Preparing zip for $ADDON_NAME -> $zip_name"
           
           # Use rsync to copy only the necessary addon folders
-          rsync -av --exclude='.git' --exclude='.github' --exclude='*.zip' \
-            ProfessionMenu \
-            "./temp_build/"
+            rsync -av \
+            --exclude='.git*' \
+            --exclude='.github*' \
+            --exclude='*.zip' \
+            --include='*/' \
+            --include='*/**' \
+            --exclude='*' \
+            ./ ./temp_build/
           
           # Navigate into the temporary build directory to zip the addon folder
           cd ./temp_build
