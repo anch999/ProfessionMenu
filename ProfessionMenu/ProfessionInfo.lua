@@ -91,6 +91,14 @@ PM.profList = {
         13977860,
         CraftingSpell = true
     }, --WOODCUTTING
+    {
+        Name = "Woodworking",
+        10050011,
+        10050010,
+        1005009,
+        1005008,
+        CraftingSpell = true
+    }, --WOODWORKING
 }
 
 local profCooldowns = {
